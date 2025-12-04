@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="24dp"
+    android:layout_marginEnd="24dp"
+    android:background="@drawable/glass_background"
+    android:padding="24dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/headerIcon"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:backgroundTint="#8D0743"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:src="@drawable/cerrar_sesion"
+            android:scaleType="centerInside"
+            app:tint="#FFFFFD" />
+
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Cerrar Sesión"
+        android:textAlignment="center"
+        android:textColor="#8D0743"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/headerIcon" />
+
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="¿Estás seguro que deseas salir?"
+        android:textAlignment="center"
+        android:textColor="#9CADBA"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Se cerrará tu sesión actual. Deberás iniciar sesión nuevamente."
+        android:textAlignment="center"
+        android:textColor="#9CADBA"
+        android:textSize="14sp"
+        android:lineSpacingExtra="2dp"
+        android:fontFamily="sans-serif"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvSubtitle" />
+
+    <View
+        android:id="@+id/divider2"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="20dp"
+        android:background="#20000000"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvMessage" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/divider2">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="CANCELAR"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#9CADBA"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.08"
+            android:backgroundTint="@android:color/transparent"
+            app:cornerRadius="26dp"
+            app:strokeColor="#9CADBA"
+            app:strokeWidth="2dp"
+            app:rippleColor="#20000000" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@android:color/transparent"
+            app:cardCornerRadius="26dp"
+            app:cardElevation="6dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/premium_button_bg"
+                android:elevation="0dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="CERRAR SESIÓN"
+                android:textColor="#FFFFFD"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                app:backgroundTint="@null"
+                app:cornerRadius="26dp"
+                app:rippleColor="#40FFFFFF"
+                app:icon="@drawable/cerrar_sesion"
+                app:iconTint="#FFFFFD"
+                app:iconSize="18dp" />
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

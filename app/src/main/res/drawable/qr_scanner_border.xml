@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="32dp" />
+            <stroke
+                android:width="3dp"
+                android:color="#8D0743" />
+        </shape>
+    </item>
+
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="top|start">
+        <shape android:shape="rectangle">
+            <corners
+                android:topLeftRadius="32dp"
+                android:topRightRadius="0dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp" />
+            <solid android:color="#8D0743" />
+        </shape>
+    </item>
+
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="top|end">
+        <shape android:shape="rectangle">
+            <corners
+                android:topLeftRadius="0dp"
+                android:topRightRadius="32dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="0dp" />
+            <solid android:color="#8D0743" />
+        </shape>
+    </item>
+
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="bottom|start">
+        <shape android:shape="rectangle">
+            <corners
+                android:topLeftRadius="0dp"
+                android:topRightRadius="0dp"
+                android:bottomLeftRadius="32dp"
+                android:bottomRightRadius="0dp" />
+            <solid android:color="#8D0743" />
+        </shape>
+    </item>
+
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="bottom|end">
+        <shape android:shape="rectangle">
+            <corners
+                android:topLeftRadius="0dp"
+                android:topRightRadius="0dp"
+                android:bottomLeftRadius="0dp"
+                android:bottomRightRadius="32dp" />
+            <solid android:color="#8D0743" />
+        </shape>
+    </item>
+
+</layer-list>

@@ -1,0 +1,111 @@
+═══════════════════════════════════════════════════════════════════════════════
+  INSTRUCCIONES PASO A PASO - REEMPLAZAR MÉTODO EN CameraActivity.java
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE: Debes reemplazar el método COMPLETO, no solo copiar partes.
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 1: ABRIR EL ARCHIVO
+══════════════════════════════════════════════════════════════════════════════
+
+Ruta: ProyectoIntegrador/app/src/main/java/com/example/proyectointegrador/UI/CameraActivity.java
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 2: LOCALIZAR EL MÉTODO A REEMPLAZAR
+══════════════════════════════════════════════════════════════════════════════
+
+Busca esta línea (Ctrl+F):
+    private void procesarValidacionTicket
+
+Debería estar en la línea 363
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 3: SELECCIONAR TODO EL MÉTODO
+══════════════════════════════════════════════════════════════════════════════
+
+Desde la línea 363:
+    private void procesarValidacionTicket(String ticketId, String studentId, String nombreEstudiante, boolean confirmar) {
+
+Hasta la línea 655 (INCLUSIVE):
+    }
+
+IMPORTANTE: Debes seleccionar TODO, incluyendo:
+- La firma del método (línea 363)
+- Todo el contenido
+- La llave de cierre final (línea 655)
+
+TOTAL DE LÍNEAS A SELECCIONAR: 293 líneas (desde 363 hasta 655)
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 4: ELIMINAR EL CÓDIGO VIEJO
+══════════════════════════════════════════════════════════════════════════════
+
+Con todo el método seleccionado, presiona DELETE o BACKSPACE
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 5: COPIAR EL CÓDIGO NUEVO
+══════════════════════════════════════════════════════════════════════════════
+
+Abre este archivo:
+    ProyectoIntegrador/CAMBIO_CameraActivity_procesarValidacionTicket.java
+
+IMPORTANTE: 
+- NO copies la primera línea que dice "// IMPORTANTE: Reemplazar..."
+- Empieza a copiar desde: "private void procesarValidacionTicket"
+- Copia TODO hasta la última llave de cierre
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 6: PEGAR EL CÓDIGO NUEVO
+══════════════════════════════════════════════════════════════════════════════
+
+Pega el código en el lugar donde estaba el método viejo (línea 363)
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 7: GUARDAR Y VERIFICAR
+══════════════════════════════════════════════════════════════════════════════
+
+1. Guarda el archivo (Ctrl+S)
+
+2. Verifica que NO hay errores de compilación en Android Studio
+
+3. Busca en el código nuevo que NO debe aparecer:
+   ✗ "/trip/for-scanning/"
+   ✗ "No hay viaje programado"
+   
+4. Verifica que SÍ aparece:
+   ✓ "/passengerintrip/pre-validate"
+   ✓ "pre-registrado"
+
+══════════════════════════════════════════════════════════════════════════════
+PASO 8: REBUILD LA APP
+══════════════════════════════════════════════════════════════════════════════
+
+En Android Studio:
+1. Build > Clean Project
+2. Build > Rebuild Project
+
+══════════════════════════════════════════════════════════════════════════════
+VERIFICACIÓN FINAL
+══════════════════════════════════════════════════════════════════════════════
+
+Busca estas líneas en TU CameraActivity.java (después del cambio):
+
+Línea ~400 DEBE decir algo como:
+    // CAMBIO PRINCIPAL: PRE-VALIDAR sin necesidad de trip existente
+    if (confirmar) {
+        android.util.Log.d("CameraActivity", "🔄 PRE-VALIDANDO ticket sin trip");
+
+Línea ~450 DEBE decir algo como:
+    String preValidateUrl = ApiConfig.getApiUrl(CameraActivity.this, "/passengerintrip/pre-validate");
+
+Si ves estas líneas, el cambio está CORRECTO ✓
+
+══════════════════════════════════════════════════════════════════════════════
+
+¿Tienes dudas? El problema es que el código VIEJO todavía está activo.
+El error "[TripController] ID inválido recibido: 'null'" viene porque la línea 401
+todavía tiene: URL urlTrip = new URL(ApiConfig.getApiUrl(..., "/trip/for-scanning/" ...
+
+ESO DEBE DESAPARECER COMPLETAMENTE.
+
+══════════════════════════════════════════════════════════════════════════════

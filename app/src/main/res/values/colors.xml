@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="primary_color">#8D0743</color>
+    <color name="secondary_color">#9CADBA</color>
+    <color name="background_color">#FFFFFD</color>
+    <color name="text_inactive">#9CADBA</color>
+    <color name="text_active">#8D0743</color>
+    <color name="inactive_color">#9CADBA</color>
+    <color name="active_color">#8D0743</color>
+
+    <!-- Additional colors for dialog -->
+    <color name="success">#4CAF50</color>
+    <color name="error">#F44336</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="divider">#BDBDBD</color>
+</resources>

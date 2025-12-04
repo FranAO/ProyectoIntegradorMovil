@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">ProyectoIntegrador</string>
+    <string name="nombre_pasajero">Nombre Pasajero</string>
+    <string name="nombre_chofer">Nombre Chofer</string>
+    <string name="ci_chofer">CI Chofer</string>
+    <string name="nombre_bus">Nombre Bus</string>
+    <string name="ruta">Ruta</string>
+    <string name="horario">Horario</string>
+    <string name="modelo_vehiculo">Modelo Vehiculo</string>
+    <string name="placa_vehiculo">Placa Vehiculo</string>
+    <string name="asientos_disponibles">Asientos Disponibles</string>
+    <string name="seleccione_viaje">Seleccione un viaje</string>
+    <string name="fecha_bus">Fecha Bus</string>
+    <string name="fecha_ticket">Fecha Ticket</string>
+    <string name="nombre_usuario">Nombre Usuario</string>
+    <string name="cantidad_pasajeros">Cantidad Pasajeros</string>
+    <string name="hora_bus">Hora Bus</string>
+
+    <string-array name="incident_types">
+        <item>Seleccione tipo de incidente</item>
+        <item>Choque</item>
+        <item>Tráfico</item>
+        <item>Falla Mecánica</item>
+        <item>Accidente</item>
+        <item>Retraso</item>
+        <item>Otro</item>
+    </string-array>
+</resources>
