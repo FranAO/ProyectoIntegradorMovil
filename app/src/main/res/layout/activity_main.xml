@@ -436,6 +436,37 @@
 
                     </androidx.cardview.widget.CardView>
 
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/btnCalificarCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:backgroundTint="@android:color/transparent"
+                        android:visibility="gone"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="4dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCalificar"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/premium_button_bg"
+                            android:elevation="0dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="CALIFICAR VIAJE"
+                            app:icon="@drawable/ic_star_filled"
+                            android:textColor="#FFFFFD"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.08"
+                            app:backgroundTint="@null"
+                            app:cornerRadius="20dp"
+                            app:rippleColor="#40FFFFFF"
+                            app:iconTint="#FFFFFD"
+                            app:iconSize="18dp" />
+
+                    </androidx.cardview.widget.CardView>
+
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
