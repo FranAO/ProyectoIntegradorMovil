@@ -223,7 +223,8 @@ public abstract class BaseNavigationActivity extends AppCompatActivity {
 
         // Calcular la posición X del botón objetivo
         navButtons[index].post(() -> {
-            float targetX = navButtons[index].getX() + (navButtons[index].getWidth() - slidingIndicator.getWidth()) / 2f;
+            float targetX = navButtons[index].getX()
+                    + (navButtons[index].getWidth() - slidingIndicator.getWidth()) / 2f;
 
             // Animar el movimiento del indicador
             ObjectAnimator animator = ObjectAnimator.ofFloat(slidingIndicator, "x", targetX);

@@ -8,27 +8,17 @@
     android:background="@drawable/modern_gradient_bg"
     tools:context=".UI.MainActivity">
 
+    <!-- Círculo decorativo superior -->
     <View
         android:id="@+id/circle1"
-        android:layout_width="180dp"
-        android:layout_height="180dp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
         android:alpha="0.08"
         android:background="@drawable/floating_circle"
-        android:layout_marginTop="-90dp"
-        android:layout_marginEnd="-90dp"
+        android:layout_marginTop="-80dp"
+        android:layout_marginEnd="-80dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <View
-        android:id="@+id/circle2"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:alpha="0.06"
-        android:background="@drawable/floating_circle"
-        android:layout_marginBottom="100dp"
-        android:layout_marginStart="-60dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
 
     <ScrollView
         android:layout_width="0dp"
@@ -46,6 +36,7 @@
             android:layout_height="wrap_content"
             android:paddingBottom="16dp">
 
+            <!-- Header Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/headerCard"
                 android:layout_width="0dp"
@@ -69,16 +60,16 @@
                     android:padding="20dp">
 
                     <androidx.cardview.widget.CardView
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
                         android:backgroundTint="#8D0743"
-                        app:cardCornerRadius="30dp"
+                        app:cardCornerRadius="28dp"
                         app:cardElevation="4dp">
 
                         <ImageView
                             android:id="@+id/ivUserAvatar"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
                             android:layout_gravity="center"
                             android:scaleType="centerInside"
                             android:src="@drawable/usuario"
@@ -139,364 +130,52 @@
 
             </androidx.cardview.widget.CardView>
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/nextTripCard"
+            <!-- Botón Ver Viaje -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVerViaje"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="56dp"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
                 android:layout_marginEnd="20dp"
-                android:backgroundTint="#40FFFFFF"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="0dp"
+                android:text="Ver Viaje"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="16dp"
+                app:backgroundTint="#8D0743"
+                android:textColor="#FFFFFF"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/headerCard">
+                app:layout_constraintTop_toBottomOf="@+id/headerCard" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/glass_background"
-                    android:orientation="vertical"
-                    android:padding="24dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
-
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
-                            android:backgroundTint="#8D0743"
-                            app:cardCornerRadius="25dp"
-                            app:cardElevation="4dp">
-
-                            <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/bus"
-                                android:scaleType="centerInside"
-                                app:tint="#FFFFFD" />
-
-                        </androidx.cardview.widget.CardView>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Tu próximo viaje"
-                                android:textColor="#9CADBA"
-                                android:textSize="13sp"
-                                android:fontFamily="sans-serif" />
-
-                            <TextView
-                                android:id="@+id/tvNextTripTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Bus Express 201"
-                                android:textColor="#8D0743"
-                                android:textSize="18sp"
-                                android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="#20000000" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_location_primary_modern"
-                                android:layout_marginEnd="8dp" />
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Origen"
-                                    android:textColor="#9CADBA"
-                                    android:textSize="11sp"
-                                    android:fontFamily="sans-serif" />
-
-                                <TextView
-                                    android:id="@+id/tvOrigin"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="La Paz"
-                                    android:textColor="#8D0743"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="sans-serif-medium" />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/bus"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#9CADBA" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_location_blue_modern"
-                                android:layout_marginEnd="8dp" />
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Destino"
-                                    android:textColor="#9CADBA"
-                                    android:textSize="11sp"
-                                    android:fontFamily="sans-serif" />
-
-                                <TextView
-                                    android:id="@+id/tvDestination"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="Cochabamba"
-                                    android:textColor="#8D0743"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold"
-                                    android:fontFamily="sans-serif-medium" />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="4dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/calendario"
-                                android:layout_marginEnd="8dp"
-                                app:tint="#9CADBA" />
-
-                            <TextView
-                                android:id="@+id/tvTripDate"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="15 Dic, 2024"
-                                android:textColor="#9CADBA"
-                                android:textSize="13sp"
-                                android:fontFamily="sans-serif" />
-
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="18dp"
-                                android:layout_height="18dp"
-                                android:src="@drawable/historial"
-                                android:layout_marginEnd="8dp"
-                                app:tint="#9CADBA" />
-
-                            <TextView
-                                android:id="@+id/tvTripTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="08:30 AM"
-                                android:textColor="#9CADBA"
-                                android:textSize="13sp"
-                                android:fontFamily="sans-serif" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:backgroundTint="@android:color/transparent"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="4dp">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnViewTicket"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="@drawable/premium_button_bg"
-                            android:elevation="0dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="VER TICKET"
-                            android:textColor="#FFFFFD"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.08"
-                            app:backgroundTint="@null"
-                            app:cornerRadius="20dp"
-                            app:rippleColor="#40FFFFFF"
-                            app:icon="@drawable/historial"
-                            app:iconTint="#FFFFFD"
-                            app:iconSize="18dp" />
-
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/btnViewTripCard"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:backgroundTint="@android:color/transparent"
-                        android:visibility="gone"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="4dp">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnViewTrip"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="@drawable/premium_button_bg"
-                            android:elevation="0dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="VER MI VIAJE"
-                            android:textColor="#FFFFFD"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.08"
-                            app:backgroundTint="@null"
-                            app:cornerRadius="20dp"
-                            app:rippleColor="#40FFFFFF"
-                            app:icon="@drawable/ruta"
-                            app:iconTint="#FFFFFD"
-                            app:iconSize="18dp" />
-
-                    </androidx.cardview.widget.CardView>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/btnCalificarCard"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:backgroundTint="@android:color/transparent"
-                        android:visibility="gone"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="4dp">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCalificar"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="@drawable/premium_button_bg"
-                            android:elevation="0dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="CALIFICAR VIAJE"
-                            app:icon="@drawable/ic_star_filled"
-                            android:textColor="#FFFFFD"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.08"
-                            app:backgroundTint="@null"
-                            app:cornerRadius="20dp"
-                            app:rippleColor="#40FFFFFF"
-                            app:iconTint="#FFFFFD"
-                            app:iconSize="18dp" />
-
-                    </androidx.cardview.widget.CardView>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
+            <!-- Quick Actions Section -->
             <TextView
                 android:id="@+id/tvQuickActions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="32dp"
                 android:text="Acciones rápidas"
                 android:textColor="#8D0743"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/nextTripCard" />
+                app:layout_constraintTop_toBottomOf="@+id/btnVerViaje" />
 
             <LinearLayout
                 android:id="@+id/quickActionsContainer"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="20dp"
                 android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvQuickActions">
 
+                <!-- Comprar Ticket -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cardBuyTicket"
                     android:layout_width="0dp"
@@ -515,19 +194,19 @@
                         android:layout_height="wrap_content"
                         android:background="@drawable/glass_background"
                         android:orientation="vertical"
-                        android:padding="20dp"
+                        android:padding="24dp"
                         android:gravity="center">
 
                         <androidx.cardview.widget.CardView
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
                             android:backgroundTint="#8D0743"
-                            app:cardCornerRadius="25dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="4dp">
 
                             <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/tickets"
                                 android:scaleType="centerInside"
@@ -539,25 +218,17 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:text="Comprar"
+                            android:text="Comprar Ticket"
                             android:textColor="#8D0743"
                             android:textSize="14sp"
                             android:textStyle="bold"
                             android:fontFamily="sans-serif-medium" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Ticket"
-                            android:textColor="#9CADBA"
-                            android:textSize="12sp"
-                            android:fontFamily="sans-serif" />
-
                     </LinearLayout>
 
                 </androidx.cardview.widget.CardView>
 
+                <!-- Historial -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cardHistory"
                     android:layout_width="0dp"
@@ -576,19 +247,19 @@
                         android:layout_height="wrap_content"
                         android:background="@drawable/glass_background"
                         android:orientation="vertical"
-                        android:padding="20dp"
+                        android:padding="24dp"
                         android:gravity="center">
 
                         <androidx.cardview.widget.CardView
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
                             android:backgroundTint="#8D0743"
-                            app:cardCornerRadius="25dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="4dp">
 
                             <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/historial"
                                 android:scaleType="centerInside"
@@ -606,15 +277,6 @@
                             android:textStyle="bold"
                             android:fontFamily="sans-serif-medium" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Viajes"
-                            android:textColor="#9CADBA"
-                            android:textSize="12sp"
-                            android:fontFamily="sans-serif" />
-
                     </LinearLayout>
 
                 </androidx.cardview.widget.CardView>
@@ -625,6 +287,7 @@
 
     </ScrollView>
 
+    <!-- Navigation Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/navigation_bar"
         android:layout_width="0dp"

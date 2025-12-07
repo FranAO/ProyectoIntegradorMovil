@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,11 +32,9 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends BaseNavigationActivity implements SignalRService.SignalRListener {
-    private CardView settingsButton, mapIconContainer, cardBuyTicket, cardHistory, btnViewTripCard;
+    private CardView settingsButton, cardBuyTicket, cardHistory;
     private TextView tvUserName;
-    private TextView tvBusNumber, tvTime;
-    private TextView tvNextTripTitle, tvOrigin, tvDestination, tvTripDate, tvTripTime;
-    private MaterialButton btnViewTicket, btnViewTrip;
+    private MaterialButton btnVerViaje;
     private SignalRService signalRService;
     private String currentTripId = null;
     private String currentDriverId = null;
@@ -56,14 +53,7 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         cardBuyTicket = findViewById(R.id.cardBuyTicket);
         cardHistory = findViewById(R.id.cardHistory);
         tvUserName = findViewById(R.id.tvUserName);
-        tvNextTripTitle = findViewById(R.id.tvNextTripTitle);
-        tvOrigin = findViewById(R.id.tvOrigin);
-        tvDestination = findViewById(R.id.tvDestination);
-        tvTripDate = findViewById(R.id.tvTripDate);
-        tvTripTime = findViewById(R.id.tvTripTime);
-        btnViewTicket = findViewById(R.id.btnViewTicket);
-        btnViewTrip = findViewById(R.id.btnViewTrip);
-        btnViewTripCard = findViewById(R.id.btnViewTripCard);
+        btnVerViaje = findViewById(R.id.btnVerViaje);
         
         SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
         String userEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "Usuario");
@@ -88,7 +78,6 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         }
         
         setupNavigation();
-        cargarProximoViaje(userEmail);
         
         // Obtener studentId
         if (student != null) {
@@ -116,31 +105,35 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
             startActivity(intent);
         });
         
-        btnViewTicket.setOnClickListener(v -> {
-            if (currentTicketId != null && !currentTicketId.isEmpty()) {
-                Intent intent = new Intent(MainActivity.this, TicketDetailActivity.class);
-                intent.putExtra("TICKET_ID", currentTicketId);
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, "No hay ticket disponible", Toast.LENGTH_SHORT).show();
-            }
-        });
+//        btnViewTicket.setOnClickListener(v -> {
+//            if (currentTicketId != null && !currentTicketId.isEmpty()) {
+//                Intent intent = new Intent(MainActivity.this, TicketDetailActivity.class);
+//                intent.putExtra("TICKET_ID", currentTicketId);
+//                startActivity(intent);
+//            } else {
+//                Toast.makeText(this, "No hay ticket disponible", Toast.LENGTH_SHORT).show();
+//            }
+//        });
         
-        btnViewTrip.setOnClickListener(v -> {
-            String tripId = prefs.getString("CURRENT_TRIP_ID", "");
+
+        btnVerViaje.setOnClickListener(v -> {
+            // Re-obtener prefs para tener el valor más actualizado
+            SharedPreferences currentPrefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
+            String tripId = currentPrefs.getString("CURRENT_TRIP_ID", "");
+            
+            // LOGS DE DIAGNÓSTICO
             
             if (!tripId.isEmpty()) {
                 Intent intent = new Intent(MainActivity.this, RouteActivity.class);
                 intent.putExtra("TRIP_ID", tripId);
-                intent.putExtra("TICKET_ID", currentTicketId); // Pasar el ticketId actual
+                intent.putExtra("TICKET_ID", currentTicketId);
                 startActivity(intent);
             } else {
-                Toast.makeText(this, "No hay viaje activo", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No hay viajes activos en este momento", Toast.LENGTH_SHORT).show();
             }
         });
         
-        // Verificar viaje activo al iniciar
-        verificarViajeActivo();
+        // NO llamar verificarViajeActivo() aquí - onResume() lo hará automáticamente
     }
     
     @Override
@@ -185,24 +178,21 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
     private void verificarViajeActivo() {
         SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
         String userEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "");
+        String currentTripIdBefore = prefs.getString("CURRENT_TRIP_ID", "");
         
-        android.util.Log.d("MainActivity", "🔍 Verificando viaje activo para: " + userEmail);
         
         if (userEmail.isEmpty()) {
-            btnViewTripCard.setVisibility(View.GONE);
             return;
         }
         
         new Thread(() -> {
             try {
                 String url = ApiConfig.getApiUrl(MainActivity.this, "/student/" + userEmail + "/active-trip");
-                android.util.Log.d("MainActivity", "🌐 URL: " + url);
                 
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestMethod("GET");
                 
                 int responseCode = conn.getResponseCode();
-                android.util.Log.d("MainActivity", "📡 Response Code: " + responseCode);
                 
                 if (responseCode == 200) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -213,12 +203,10 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                     }
                     reader.close();
                     
-                    android.util.Log.d("MainActivity", "📥 Respuesta: " + response.toString());
                     
                     JSONObject json = new JSONObject(response.toString());
                     boolean hasActiveTrip = json.getBoolean("hasActiveTrip");
                     
-                    android.util.Log.d("MainActivity", "✅ hasActiveTrip: " + hasActiveTrip);
                     
                     if (hasActiveTrip) {
                         String tripId = json.getString("tripId");
@@ -227,24 +215,18 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putString("CURRENT_TRIP_ID", tripId);
                         editor.apply();
+                        
                     } else {
                         // Limpiar si no hay viaje activo
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.remove("CURRENT_TRIP_ID");
                         editor.apply();
+                        
                     }
-                    
-                    runOnUiThread(() -> {
-                        if (hasActiveTrip) {
-                            btnViewTripCard.setVisibility(View.VISIBLE);
-                        } else {
-                            btnViewTripCard.setVisibility(View.GONE);
-                        }
-                    });
+                } else {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                runOnUiThread(() -> btnViewTripCard.setVisibility(View.GONE));
             }
         }).start();
     }
@@ -280,9 +262,9 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                 // Recargar el próximo viaje después de que termina uno
                 SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
                 String userEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "");
-                if (!userEmail.isEmpty()) {
-                    cargarProximoViaje(userEmail);
-                }
+                //if (!userEmail.isEmpty()) {
+                  //  cargarProximoViaje(userEmail);
+                //}
                 
                 // Mostrar diálogo de calificación
                 if (currentDriverId != null && studentId != null) {
@@ -445,246 +427,6 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                 e.printStackTrace();
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Error de conexión", Toast.LENGTH_SHORT).show();
-                });
-            }
-        }).start();
-    }
-
-
-
-    private void cargarProximoViaje(String userEmail) {
-        new Thread(() -> {
-            try {
-                // Obtener el student ID
-                DBHelper dbHelper = new DBHelper(this);
-                Student student = dbHelper.obtenerStudentPorEmail(userEmail);
-                if (student == null) {
-                    runOnUiThread(() -> {
-                        tvNextTripTitle.setText("Sin viajes");
-                        tvOrigin.setText("-");
-                        tvDestination.setText("-");
-                        tvTripDate.setText("-");
-                        tvTripTime.setText("-");
-                        btnViewTicket.setEnabled(false);
-                    });
-                    return;
-                }
-                
-                String studentIdLocal = student.getId();
-                
-                // Obtener tickets disponibles del estudiante
-                URL ticketUrl = new URL(ApiConfig.getApiUrl(MainActivity.this, "/ticket/my-tickets/" + studentIdLocal));
-                HttpURLConnection ticketCon = (HttpURLConnection) ticketUrl.openConnection();
-                ticketCon.setRequestMethod("GET");
-                ticketCon.setConnectTimeout(10000);
-                ticketCon.setReadTimeout(10000);
-
-                if (ticketCon.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(ticketCon.getInputStream()));
-                    StringBuilder respuesta = new StringBuilder();
-                    String linea;
-
-                    while ((linea = reader.readLine()) != null) {
-                        respuesta.append(linea);
-                    }
-                    reader.close();
-
-                    JSONArray ticketsArray = new JSONArray(respuesta.toString());
-                    String tripIdToLoad = null;
-                    String ticketIdToLoad = null;
-
-                    // Buscar el primer ticket disponible o confirmado con tripId
-                    for (int i = 0; i < ticketsArray.length(); i++) {
-                        JSONObject ticketObj = ticketsArray.getJSONObject(i);
-                        String status = ticketObj.optString("Status", ticketObj.optString("status", ""));
-                        String tripId = ticketObj.optString("TripId", ticketObj.optString("tripId", ""));
-                        String ticketId = ticketObj.optString("Id", ticketObj.optString("id", ""));
-
-                        if (("available".equalsIgnoreCase(status) || "confirmed".equalsIgnoreCase(status)) 
-                            && tripId != null && !tripId.isEmpty() && !tripId.equals("null")) {
-                            tripIdToLoad = tripId;
-                            ticketIdToLoad = ticketId;
-                            break;
-                        }
-                    }
-
-                    if (tripIdToLoad != null) {
-                        cargarDatosViajeCompleto(tripIdToLoad, ticketIdToLoad);
-                    } else {
-                        runOnUiThread(() -> {
-                            tvNextTripTitle.setText("Sin viajes programados");
-                            tvOrigin.setText("-");
-                            tvDestination.setText("-");
-                            tvTripDate.setText("Compra un ticket");
-                            tvTripTime.setText("-");
-                            btnViewTicket.setEnabled(false);
-                        });
-                    }
-                } else {
-                    runOnUiThread(() -> {
-                        tvNextTripTitle.setText("Error al cargar");
-                        tvOrigin.setText("-");
-                        tvDestination.setText("-");
-                        tvTripDate.setText("-");
-                        tvTripTime.setText("-");
-                        btnViewTicket.setEnabled(false);
-                    });
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> {
-                    tvNextTripTitle.setText("Error de conexión");
-                    tvOrigin.setText("-");
-                    tvDestination.setText("-");
-                    tvTripDate.setText("-");
-                    tvTripTime.setText("-");
-                    btnViewTicket.setEnabled(false);
-                });
-            }
-        }).start();
-    }
-
-    private void cargarDatosViajeCompleto(String tripId, String ticketId) {
-        new Thread(() -> {
-            try {
-                // Cargar datos del trip
-                URL tripUrl = new URL(ApiConfig.getApiUrl(MainActivity.this, "/trip/" + tripId));
-                HttpURLConnection tripCon = (HttpURLConnection) tripUrl.openConnection();
-                tripCon.setRequestMethod("GET");
-                tripCon.setConnectTimeout(10000);
-                tripCon.setReadTimeout(10000);
-
-                if (tripCon.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(tripCon.getInputStream()));
-                    StringBuilder respuesta = new StringBuilder();
-                    String linea;
-
-                    while ((linea = reader.readLine()) != null) {
-                        respuesta.append(linea);
-                    }
-                    reader.close();
-
-                    JSONObject tripObj = new JSONObject(respuesta.toString());
-                    String busId = tripObj.optString("BusId", tripObj.optString("busId", ""));
-                    String routeId = tripObj.optString("RouteId", tripObj.optString("routeId", ""));
-                    String driverId = tripObj.optString("DriverId", tripObj.optString("driverId", ""));
-                    String startTimeStr = tripObj.optString("StartTime", tripObj.optString("startTime", ""));
-                    String endTimeStr = tripObj.optString("EndTime", tripObj.optString("endTime", ""));
-                    
-                    // Guardar tripId, ticketId y driverId para notificaciones y calificaciones
-                    currentTripId = tripId;
-                    currentTicketId = ticketId;
-                    currentDriverId = driverId;
-
-                    // Cargar datos del bus
-                    URL busUrl = new URL(ApiConfig.getApiUrl(MainActivity.this, "/bus/" + busId));
-                    HttpURLConnection busCon = (HttpURLConnection) busUrl.openConnection();
-                    busCon.setRequestMethod("GET");
-                    busCon.setConnectTimeout(10000);
-                    busCon.setReadTimeout(10000);
-
-                    String busCode = "Bus";
-                    if (busCon.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                        BufferedReader busReader = new BufferedReader(new InputStreamReader(busCon.getInputStream()));
-                        StringBuilder busRespuesta = new StringBuilder();
-                        String busLinea;
-
-                        while ((busLinea = busReader.readLine()) != null) {
-                            busRespuesta.append(busLinea);
-                        }
-                        busReader.close();
-
-                        JSONObject busObj = new JSONObject(busRespuesta.toString());
-                        busCode = busObj.optString("BusCode", busObj.optString("busCode", "Bus"));
-                    }
-                    
-                    // Cargar datos de la ruta para obtener origen y destino
-                    URL routeUrl = new URL(ApiConfig.getApiUrl(MainActivity.this, "/busroute/" + routeId));
-                    HttpURLConnection routeCon = (HttpURLConnection) routeUrl.openConnection();
-                    routeCon.setRequestMethod("GET");
-                    routeCon.setConnectTimeout(10000);
-                    routeCon.setReadTimeout(10000);
-
-                    String origin = "Origen";
-                    String destination = "Destino";
-                    if (routeCon.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                        BufferedReader routeReader = new BufferedReader(new InputStreamReader(routeCon.getInputStream()));
-                        StringBuilder routeRespuesta = new StringBuilder();
-                        String routeLinea;
-
-                        while ((routeLinea = routeReader.readLine()) != null) {
-                            routeRespuesta.append(routeLinea);
-                        }
-                        routeReader.close();
-
-                        JSONObject routeObj = new JSONObject(routeRespuesta.toString());
-                        origin = routeObj.optString("RouteName", routeObj.optString("routeName", "Ruta Principal"));
-                        
-                        // Obtener stops para inicio y fin
-                        JSONArray stopsArray = routeObj.optJSONArray("Stops");
-                        if (stopsArray == null) {
-                            stopsArray = routeObj.optJSONArray("stops");
-                        }
-                        
-                        if (stopsArray != null && stopsArray.length() > 0) {
-                            JSONObject firstStop = stopsArray.getJSONObject(0);
-                            JSONObject lastStop = stopsArray.getJSONObject(stopsArray.length() - 1);
-                            
-                            origin = firstStop.optString("Name", firstStop.optString("name", "Parada Inicio"));
-                            destination = lastStop.optString("Name", lastStop.optString("name", "Parada Final"));
-                        }
-                    }
-
-                    // Formatear fecha y hora
-                    String fechaFormateada = "";
-                    String horaFormateada = "";
-                    try {
-                        SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-                        Date startTime = isoFormat.parse(startTimeStr);
-                        
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM, yyyy", new Locale("es", "ES"));
-                        fechaFormateada = dateFormat.format(startTime);
-                        
-                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
-                        horaFormateada = timeFormat.format(startTime);
-                        
-                        if (endTimeStr != null && !endTimeStr.isEmpty() && !endTimeStr.equals("null")) {
-                            Date endTime = isoFormat.parse(endTimeStr);
-                            horaFormateada += " - " + timeFormat.format(endTime);
-                        }
-                    } catch (Exception e) {
-                        fechaFormateada = "Fecha no disponible";
-                        horaFormateada = "Hora no disponible";
-                    }
-
-                    String finalBusCode = busCode;
-                    String finalOrigin = origin;
-                    String finalDestination = destination;
-                    String finalFecha = fechaFormateada;
-                    String finalHora = horaFormateada;
-
-                    runOnUiThread(() -> {
-                        tvNextTripTitle.setText(finalBusCode);
-                        tvOrigin.setText(finalOrigin);
-                        tvDestination.setText(finalDestination);
-                        tvTripDate.setText(finalFecha);
-                        tvTripTime.setText(finalHora);
-                        btnViewTicket.setEnabled(true);
-                        
-                        // Mantener compatibilidad con el mapIconContainer
-                        tvBusNumber.setText(finalBusCode);
-                        tvTime.setText(finalHora);
-                    });
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> {
-                    tvNextTripTitle.setText("Error");
-                    tvOrigin.setText("-");
-                    tvDestination.setText("-");
-                    tvTripDate.setText("No disponible");
-                    tvTripTime.setText("-");
-                    btnViewTicket.setEnabled(false);
                 });
             }
         }).start();

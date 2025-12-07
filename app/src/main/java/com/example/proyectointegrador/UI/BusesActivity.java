@@ -47,7 +47,7 @@ public class BusesActivity extends BaseNavigationActivity {
     private void cargarBuses() {
         new Thread(() -> {
             try {
-                // Cargar TODOS los buses (información estática)
+                // Cargar TODOS los buses (información est ática)
                 URL busUrl = new URL(ApiConfig.getApiUrl(BusesActivity.this, "/bus"));
                 HttpURLConnection busCon = (HttpURLConnection) busUrl.openConnection();
                 busCon.setRequestMethod("GET");
@@ -55,7 +55,7 @@ public class BusesActivity extends BaseNavigationActivity {
                 busCon.setReadTimeout(10000);
 
                 int responseCode = busCon.getResponseCode();
-                
+
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(busCon.getInputStream()));
                     StringBuilder respuesta = new StringBuilder();
@@ -68,13 +68,13 @@ public class BusesActivity extends BaseNavigationActivity {
 
                     String jsonResponse = respuesta.toString();
                     JSONArray busesArray = new JSONArray(jsonResponse);
-                    
+
                     busList.clear();
 
                     // Procesar cada bus
                     for (int i = 0; i < busesArray.length(); i++) {
                         JSONObject busObj = busesArray.getJSONObject(i);
-                        
+
                         Bus bus = new Bus();
                         bus.setId(busObj.optString("id"));
                         bus.setBusCode(busObj.optString("busCode"));
@@ -83,8 +83,42 @@ public class BusesActivity extends BaseNavigationActivity {
                         bus.setStatus(busObj.optString("status"));
                         bus.setDriverId(busObj.optString("driverId"));
                         bus.setRouteId(busObj.optString("routeId")); // Ruta ESTÁTICA asignada al bus
-                        bus.setCurrentPassengers(0); // Por defecto 0, se puede actualizar si hay trip activo
-                        
+
+                        // Obtener pasajeros actuales del trip activo si existe
+                        String tripId = busObj.optString("tripId", "");
+                        int currentPassengers = 0;
+
+                        if (tripId != null && !tripId.isEmpty()) {
+                            // Si hay un tripId, intentar obtener los pasajeros ocupados
+                            try {
+                                URL tripUrl = new URL(ApiConfig.getApiUrl(BusesActivity.this, "/trip/" + tripId));
+                                HttpURLConnection tripConn = (HttpURLConnection) tripUrl.openConnection();
+                                tripConn.setRequestMethod("GET");
+                                tripConn.setConnectTimeout(5000);
+                                tripConn.setReadTimeout(5000);
+
+                                if (tripConn.getResponseCode() == 200) {
+                                    BufferedReader tripReader = new BufferedReader(
+                                            new InputStreamReader(tripConn.getInputStream()));
+                                    StringBuilder tripResponse = new StringBuilder();
+                                    String tripLine;
+                                    while ((tripLine = tripReader.readLine()) != null) {
+                                        tripResponse.append(tripLine);
+                                    }
+                                    tripReader.close();
+
+                                    JSONObject tripObj = new JSONObject(tripResponse.toString());
+                                    currentPassengers = tripObj.optInt("occupiedSeats", 0);
+                                }
+                                tripConn.disconnect();
+                            } catch (Exception e) {
+                                // Si falla, dejarlo en 0
+                                e.printStackTrace();
+                            }
+                        }
+
+                        bus.setCurrentPassengers(currentPassengers);
+
                         busList.add(bus);
                     }
 
@@ -105,12 +139,14 @@ public class BusesActivity extends BaseNavigationActivity {
             } catch (java.net.UnknownHostException e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "No se puede conectar al servidor. Verifica que esté corriendo.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "No se puede conectar al servidor. Verifica que esté corriendo.",
+                            Toast.LENGTH_LONG).show();
                 });
             } catch (java.net.SocketTimeoutException e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Tiempo de espera agotado. El servidor no responde.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Tiempo de espera agotado. El servidor no responde.", Toast.LENGTH_LONG)
+                            .show();
                 });
             } catch (java.io.IOException e) {
                 e.printStackTrace();
@@ -120,7 +156,8 @@ public class BusesActivity extends BaseNavigationActivity {
                 });
             } catch (Exception e) {
                 e.printStackTrace();
-                String errorMsg = e.getClass().getSimpleName() + ": " + (e.getMessage() != null ? e.getMessage() : "Error desconocido");
+                String errorMsg = e.getClass().getSimpleName() + ": " +
+                        (e.getMessage() != null ? e.getMessage() : "Error desconocido");
                 runOnUiThread(() -> {
                     Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
                 });

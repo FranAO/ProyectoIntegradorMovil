@@ -25,6 +25,7 @@ public class SettingsActivity_C extends AppCompatActivity {
 
     private MaterialButton cardBackButton;
     private CardView logoutCard;
+    private CardView changePasswordCard;
     private TextView tvUserName;
     private SwitchMaterial switchBiometric;
 
@@ -48,6 +49,7 @@ public class SettingsActivity_C extends AppCompatActivity {
         // Fixed: card_back_button is a MaterialButton, not a CardView
         cardBackButton = findViewById(R.id.card_back_button);
         logoutCard = (CardView) findViewById(R.id.logoutCard);
+        changePasswordCard = (CardView) findViewById(R.id.changePasswordCard);
         tvUserName = findViewById(R.id.tv_user_name);
         switchBiometric = findViewById(R.id.switch_biometric);
 
@@ -63,6 +65,10 @@ public class SettingsActivity_C extends AppCompatActivity {
             Intent intent = new Intent(SettingsActivity_C.this, MainActivity_C.class);
             startActivity(intent);
             finish();
+        });
+
+        changePasswordCard.setOnClickListener(v -> {
+            showChangePasswordDialog();
         });
 
         logoutCard.setOnClickListener(v -> {
@@ -125,7 +131,8 @@ public class SettingsActivity_C extends AppCompatActivity {
 
             new AlertDialog.Builder(this)
                     .setTitle("Advertencia")
-                    .setMessage("La huella ya está enlazada a otro usuario (" + savedUser + "). ¿Deseas reemplazarla y enlazarla a " + currentUserEmail + "?")
+                    .setMessage("La huella ya está enlazada a otro usuario (" + savedUser
+                            + "). ¿Deseas reemplazarla y enlazarla a " + currentUserEmail + "?")
                     .setPositiveButton("Reemplazar", (dialog, which) -> {
                         requestBiometricAuth();
                     })
@@ -166,7 +173,7 @@ public class SettingsActivity_C extends AppCompatActivity {
         dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_logout_confirmation);
         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        
+
         // Configurar ancho y alto del diálogo
         android.view.WindowManager.LayoutParams params = dialog.getWindow().getAttributes();
         params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.90);
@@ -186,7 +193,124 @@ public class SettingsActivity_C extends AppCompatActivity {
         dialog.show();
     }
 
+    private void showChangePasswordDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        android.view.View view = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
+
+        com.google.android.material.textfield.TextInputEditText etCurrentPassword = view
+                .findViewById(R.id.etCurrentPassword);
+        com.google.android.material.textfield.TextInputEditText etNewPassword = view.findViewById(R.id.etNewPassword);
+        com.google.android.material.textfield.TextInputEditText etConfirmPassword = view
+                .findViewById(R.id.etConfirmPassword);
+
+        builder.setView(view);
+        android.app.AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        view.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btnConfirm).setOnClickListener(v -> {
+            String currentPassword = etCurrentPassword.getText().toString().trim();
+            String newPassword = etNewPassword.getText().toString().trim();
+            String confirmPassword = etConfirmPassword.getText().toString().trim();
+
+            if (currentPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+                Toast.makeText(this, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (newPassword.length() < 6) {
+                Toast.makeText(this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Llamar al método para cambiar la contraseña
+            cambiarContrasena(currentUserEmail, currentPassword, newPassword);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void cambiarContrasena(String email, String currentPassword, String newPassword) {
+        new Thread(() -> {
+            try {
+                android.util.Log.d("SettingsActivity_C", "🔐 Iniciando cambio de contraseña para: " + email);
+
+                String apiUrl = com.example.proyectointegrador.Config.ApiConfig.getApiUrl(this,
+                        "/Auth/change-password");
+
+                android.util.Log.d("SettingsActivity_C", "🌐 URL: " + apiUrl);
+
+                java.net.URL url = new java.net.URL(apiUrl);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                org.json.JSONObject jsonBody = new org.json.JSONObject();
+                jsonBody.put("email", email);
+                jsonBody.put("currentPassword", currentPassword);
+                jsonBody.put("newPassword", newPassword);
+
+                android.util.Log.d("SettingsActivity_C", "📤 Request body: " + jsonBody.toString());
+
+                java.io.OutputStream os = conn.getOutputStream();
+                os.write(jsonBody.toString().getBytes());
+                os.flush();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+                android.util.Log.d("SettingsActivity_C", "📡 Response code: " + responseCode);
+
+                // Leer el cuerpo de la respuesta
+                String responseBody = "";
+                try {
+                    java.io.BufferedReader br;
+                    if (responseCode >= 200 && responseCode < 300) {
+                        br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+                    } else {
+                        br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getErrorStream()));
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    br.close();
+                    responseBody = sb.toString();
+                    android.util.Log.d("SettingsActivity_C", "📥 Response body: " + responseBody);
+                } catch (Exception e) {
+                    android.util.Log.e("SettingsActivity_C", "⚠️ Error leyendo response body: " + e.getMessage());
+                }
+
+                final String finalResponseBody = responseBody;
+                runOnUiThread(() -> {
+                    if (responseCode == 200) {
+                        Toast.makeText(this, "Contraseña cambiada exitosamente", Toast.LENGTH_LONG).show();
+                    } else if (responseCode == 400 || responseCode == 401) {
+                        Toast.makeText(this, "Error: Contraseña actual incorrecta", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Error " + responseCode + ": " + finalResponseBody,
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                android.util.Log.e("SettingsActivity_C", "❌ Error cambiando contraseña: " + e.getMessage());
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error de conexión: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
     private void performLogout() {
+
         prefs.edit()
                 .remove(LOGGED_IN_USER_EMAIL)
                 .apply();

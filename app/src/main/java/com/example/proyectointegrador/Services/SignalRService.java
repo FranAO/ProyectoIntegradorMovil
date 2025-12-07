@@ -38,17 +38,14 @@ public class SignalRService {
 
             // Registrar handler para ubicación del bus
             hubConnection.on("ReceiveBusLocation", (busId, latitude, longitude, status) -> {
-                android.util.Log.d("SignalR", String.format("📡 ReceiveBusLocation: busId=%s, lat=%f, lng=%f, status=%s", busId, latitude, longitude, status));
                 if (listener != null) {
                     listener.onBusLocationReceived(busId, latitude, longitude, status);
                 } else {
-                    android.util.Log.w("SignalR", "Listener es null, no se puede procesar ubicación");
                 }
             }, String.class, Double.class, Double.class, String.class);
 
             // Registrar handler para inicio de viaje
             hubConnection.on("TripStarted", (tripId, busId, routeId) -> {
-                android.util.Log.d("SignalR", String.format("🚀 TripStarted: tripId=%s, busId=%s, routeId=%s", tripId, busId, routeId));
                 if (listener != null) {
                     listener.onTripStarted(tripId, busId, routeId);
                 }
@@ -56,7 +53,6 @@ public class SignalRService {
 
             // Registrar handler para fin de viaje
             hubConnection.on("TripEnded", (tripId) -> {
-                android.util.Log.d("SignalR", String.format("🏁 TripEnded: tripId=%s", tripId));
                 if (listener != null) {
                     listener.onTripEnded(tripId);
                 }
@@ -84,18 +80,14 @@ public class SignalRService {
 
     public void connect() {
         if (hubConnection == null) {
-            android.util.Log.d("SignalR", "🔧 Inicializando conexión...");
             initializeConnection();
         }
 
         if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
-            android.util.Log.d("SignalR", "🔗 Intentando conectar...");
             new Thread(() -> {
                 try {
                     hubConnection.start().blockingAwait();
-                    android.util.Log.d("SignalR", "✅ Conectado exitosamente");
                 } catch (Exception e) {
-                    android.util.Log.e("SignalR", "❌ Error al conectar: " + e.getMessage());
                 }
             }).start();
         }

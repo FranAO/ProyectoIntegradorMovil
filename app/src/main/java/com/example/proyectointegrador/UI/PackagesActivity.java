@@ -289,14 +289,12 @@ public class PackagesActivity extends BaseNavigationActivity {
             dialog.dismiss();
             
             // Llamar al servicio para comprar ticket individual
-            android.util.Log.d("PackagesActivity", "Comprando ticket para: " + studentEmail);
             com.example.proyectointegrador.Services.TicketApiService.purchaseSingleTicket(
                     studentEmail,
                     null, // No hay tripId al comprar, es ticket universal
                     new com.example.proyectointegrador.Services.TicketApiService.ApiCallback() {
                         @Override
                         public void onSuccess(String response) {
-                            android.util.Log.d("PackagesActivity", "Ticket comprado exitosamente: " + response);
                             Toast.makeText(PackagesActivity.this, "¡Ticket comprado exitosamente!", Toast.LENGTH_SHORT).show();
                             // Navegar a HistoryActivity
                             Intent intent = new Intent(PackagesActivity.this, HistoryActivity.class);
@@ -305,7 +303,6 @@ public class PackagesActivity extends BaseNavigationActivity {
 
                         @Override
                         public void onError(String error) {
-                            android.util.Log.e("PackagesActivity", "Error al comprar ticket: " + error);
                             Toast.makeText(PackagesActivity.this, "Error al comprar ticket: " + error, Toast.LENGTH_LONG).show();
                         }
                     }

@@ -102,7 +102,6 @@ public class TicketAdapter extends RecyclerView.Adapter<TicketAdapter.TicketView
     private void loadTripInfo(String tripId, TextView textView) {
         // Validar que tripId no sea null o inválido
         if (tripId == null || tripId.isEmpty() || tripId.equals("null") || tripId.length() != 24) {
-            android.util.Log.w("TicketAdapter", "TripId inválido: " + tripId);
             ((android.app.Activity) context).runOnUiThread(() -> 
                 textView.setText("Ticket válido - Pendiente de uso")
             );

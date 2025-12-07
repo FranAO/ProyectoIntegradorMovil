@@ -401,6 +401,42 @@
 
             </androidx.cardview.widget.CardView>
 
+            <androidx.cardview.widget.CardView
+                android:id="@+id/devolverTicketCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="20dp"
+                android:backgroundTint="@android:color/transparent"
+                android:visibility="gone"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="6dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/startTripCard">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDevolverTicket"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/glass_background"
+                    android:elevation="0dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="DEVOLVER TICKET"
+                    android:textColor="#8D0743"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    app:backgroundTint="@null"
+                    app:cornerRadius="24dp"
+                    app:rippleColor="#208D0743"
+                    app:icon="@drawable/ic_ticket_return"
+                    app:iconTint="#8D0743"
+                    app:iconSize="20dp" />
+
+            </androidx.cardview.widget.CardView>
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </ScrollView>

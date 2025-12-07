@@ -67,13 +67,13 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put("role", student.getRole());
         values.put("createdAt", student.getCreatedAt() != null ? dateFormatter.format(student.getCreatedAt()) : null);
 
-        int editar = db.update("students", values, "id = ?", new String[]{student.getId()});
+        int editar = db.update("students", values, "id = ?", new String[] { student.getId() });
         return editar > 0;
     }
 
     public boolean eliminarStudent(String id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        int eliminar = db.delete("students", "id = ?", new String[]{id});
+        int eliminar = db.delete("students", "id = ?", new String[] { id });
         return eliminar > 0;
     }
 
@@ -99,8 +99,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         cursor.getString(4),
                         cursor.getString(5),
                         cursor.getString(6),
-                        createdAt
-                );
+                        createdAt);
                 lista.add(student);
             } while (cursor.moveToNext());
         }
@@ -110,7 +109,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Student obtenerStudentPorEmail(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM students WHERE institutionalEmail = ?", new String[]{email});
+        Cursor cursor = db.rawQuery("SELECT * FROM students WHERE institutionalEmail = ?", new String[] { email });
         Student student = null;
         if (cursor.moveToFirst()) {
             Date createdAt = null;
@@ -129,8 +128,7 @@ public class DBHelper extends SQLiteOpenHelper {
                     cursor.getString(4),
                     cursor.getString(5),
                     cursor.getString(6),
-                    createdAt
-            );
+                    createdAt);
         }
         cursor.close();
         return student;

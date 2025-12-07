@@ -403,18 +403,13 @@ public class CameraActivity extends BaseNavigationActivity_C {
 
                 // CAMBIO PRINCIPAL: PRE-VALIDAR sin necesidad de trip existente
                 if (confirmar) {
-                    android.util.Log.d("CameraActivity", "🔄 PRE-VALIDANDO ticket sin trip");
 
                     SharedPreferences prefsToken = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
                     String token = prefsToken.getString("AUTH_TOKEN", "");
 
-                    android.util.Log.d("CameraActivity", "Token: " + (token.isEmpty() ? "EMPTY" : "Present"));
-                    android.util.Log.d("CameraActivity", "TicketId: " + finalTicketId);
-                    android.util.Log.d("CameraActivity", "DriverId: " + driverId);
 
                     // Llamar al endpoint de pre-validación
                     String preValidateUrl = ApiConfig.getApiUrl(CameraActivity.this, "/passengerintrip/pre-validate");
-                    android.util.Log.d("CameraActivity", "Pre-Validate URL: " + preValidateUrl);
 
                     URL urlPreValidate = new URL(preValidateUrl);
                     HttpURLConnection connPreValidate = (HttpURLConnection) urlPreValidate.openConnection();
@@ -428,7 +423,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                     requestData.put("TicketId", finalTicketId);
                     requestData.put("DriverId", driverId);
 
-                    android.util.Log.d("CameraActivity", "Request Data: " + requestData.toString());
 
                     java.io.OutputStream os = connPreValidate.getOutputStream();
                     os.write(requestData.toString().getBytes());
@@ -436,7 +430,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                     os.close();
 
                     int responseCode = connPreValidate.getResponseCode();
-                    android.util.Log.d("CameraActivity", "Response Code: " + responseCode);
 
                     if (responseCode == 200) {
                         // Leer respuesta exitosa
@@ -448,9 +441,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                             responseValidate.append(lineValidate);
                         }
                         readerValidate.close();
-
-                        android.util.Log.d("CameraActivity",
-                                "✅ Pre-validación exitosa: " + responseValidate.toString());
 
                         runOnUiThread(() -> {
                             if (!isFinishing() && !isDestroyed()) {
@@ -487,7 +477,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                         errorReader.close();
 
                         String errorMessage = errorResponse.toString();
-                        android.util.Log.e("CameraActivity", "Error Response: " + errorMessage);
 
                         // Parsear el error para mostrar mensaje más amigable
                         String userMessage = "Error al pre-validar ticket";
@@ -530,10 +519,8 @@ public class CameraActivity extends BaseNavigationActivity_C {
                     }
                 } else {
                     // Denegar el ticket - actualizar estado a "cancelled"
-                    android.util.Log.d("CameraActivity", "Denegando ticket: " + finalTicketId);
 
                     String updateUrl = ApiConfig.getApiUrl(CameraActivity.this, "/ticket/" + finalTicketId);
-                    android.util.Log.d("CameraActivity", "Update URL: " + updateUrl);
 
                     URL urlUpdate = new URL(updateUrl);
                     HttpURLConnection connUpdate = (HttpURLConnection) urlUpdate.openConnection();
@@ -544,7 +531,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                     JSONObject updateData = new JSONObject();
                     updateData.put("Status", "cancelled");
 
-                    android.util.Log.d("CameraActivity", "Update Data: " + updateData.toString());
 
                     java.io.OutputStream os = connUpdate.getOutputStream();
                     os.write(updateData.toString().getBytes());
@@ -552,7 +538,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                     os.close();
 
                     int responseCode = connUpdate.getResponseCode();
-                    android.util.Log.d("CameraActivity", "Update Response Code: " + responseCode);
 
                     if (responseCode == 200 || responseCode == 204) {
                         runOnUiThread(() -> {
@@ -588,7 +573,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
                         errorReader.close();
 
                         String errorMessage = errorResponse.toString();
-                        android.util.Log.e("CameraActivity", "Error denegando ticket: " + errorMessage);
 
                         runOnUiThread(() -> {
                             if (!isFinishing() && !isDestroyed()) {
@@ -614,7 +598,6 @@ public class CameraActivity extends BaseNavigationActivity_C {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                android.util.Log.e("CameraActivity", "Error en procesarValidacionTicket: " + e.getMessage(), e);
                 runOnUiThread(() -> {
                     if (!isFinishing() && !isDestroyed()) {
                         if (tvResultado != null) {

@@ -23,28 +23,28 @@ import java.util.List;
 public class RouteSimulationService {
     private static final String TAG = "RouteSimulation";
     private static RouteSimulationService instance;
-    
+
     private Context context;
     private String baseUrl;
     private HubConnection hubConnection;
-    
+
     private List<RoutePoint> routePoints;
     private int currentPointIndex = 0;
     private boolean isSimulating = false;
     private boolean simulationStartedByDriver = false;
-    
+
     private String currentTripId;
     private String currentBusId;
     private String currentRouteId;
-    
+
     private Handler simulationHandler;
     private static final long SIMULATION_INTERVAL = 3000; // 3 segundos entre puntos
-    
+
     /**
      * Clase interna para representar un punto de la ruta
      * Movida al final de la clase como clase pública estática
      */
-    
+
     private RouteSimulationService(Context context, String baseUrl) {
         this.context = context.getApplicationContext();
         this.baseUrl = baseUrl;
@@ -52,7 +52,7 @@ public class RouteSimulationService {
         this.routePoints = new ArrayList<>();
         initializeSignalR();
     }
-    
+
     /**
      * Obtiene la instancia única del servicio (Singleton)
      */
@@ -62,7 +62,7 @@ public class RouteSimulationService {
         }
         return instance;
     }
-    
+
     /**
      * Inicializa la conexión SignalR
      */
@@ -74,10 +74,10 @@ public class RouteSimulationService {
                 cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
             }
             String hubUrl = cleanBaseUrl + "/bushub";
-            
+
             hubConnection = HubConnectionBuilder.create(hubUrl)
                     .build();
-            
+
             hubConnection.onClosed(exception -> {
                 // Intentar reconectar
                 simulationHandler.postDelayed(() -> {
@@ -86,11 +86,11 @@ public class RouteSimulationService {
                     }
                 }, 5000);
             });
-            
+
         } catch (Exception e) {
         }
     }
-    
+
     /**
      * Conecta a SignalR
      */
@@ -98,7 +98,7 @@ public class RouteSimulationService {
         if (hubConnection == null) {
             initializeSignalR();
         }
-        
+
         if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
             new Thread(() -> {
                 try {
@@ -108,24 +108,25 @@ public class RouteSimulationService {
             }).start();
         }
     }
-    
+
     /**
      * Inicia la simulación de la ruta
+     * 
      * @param routeGeometry GeoJSON string con la geometría de la ruta
-     * @param tripId ID del viaje
-     * @param busId ID del bus
-     * @param routeId ID de la ruta
+     * @param tripId        ID del viaje
+     * @param busId         ID del bus
+     * @param routeId       ID de la ruta
      */
     public void startSimulation(String routeGeometry, String tripId, String busId, String routeId) {
         this.currentTripId = tripId;
         this.currentBusId = busId;
         this.currentRouteId = routeId;
-        
+
         // Parsear la geometría de la ruta
         if (!parseRouteGeometry(routeGeometry)) {
             return;
         }
-        
+
         // Conectar a SignalR si no está conectado
         if (hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
             connectSignalR();
@@ -137,19 +138,19 @@ public class RouteSimulationService {
             continueSimulation();
         }
     }
-    
+
     private void continueSimulation() {
         // Iniciar la simulación
         isSimulating = true;
         simulationStartedByDriver = true;
         currentPointIndex = 0;
-        
+
         // Notificar que el viaje ha iniciado via SignalR
         notifyTripStarted();
-        
+
         simulateNextPoint();
     }
-    
+
     /**
      * Notifica via SignalR que el viaje ha iniciado
      */
@@ -157,7 +158,7 @@ public class RouteSimulationService {
         if (hubConnection == null || hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
             return;
         }
-        
+
         new Thread(() -> {
             try {
                 // Enviar notificación de inicio de viaje
@@ -166,7 +167,7 @@ public class RouteSimulationService {
             }
         }).start();
     }
-    
+
     /**
      * Notifica via SignalR que el viaje ha finalizado
      */
@@ -174,19 +175,19 @@ public class RouteSimulationService {
         if (hubConnection == null || hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
             return;
         }
-        
+
         new Thread(() -> {
             try {
                 // Enviar notificación de fin de viaje
                 hubConnection.send("NotifyTripEnded", currentTripId);
-                
+
                 // Actualizar el estado del viaje en el servidor
                 updateTripStatus();
             } catch (Exception e) {
             }
         }).start();
     }
-    
+
     /**
      * Actualiza el estado del viaje a 'completed'
      */
@@ -198,7 +199,7 @@ public class RouteSimulationService {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("PUT");
                 conn.setRequestProperty("Content-Type", "application/json");
-                
+
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200 || responseCode == 204) {
                 } else {
@@ -208,9 +209,10 @@ public class RouteSimulationService {
             }
         }).start();
     }
-    
+
     /**
-     * Decodifica una cadena polyline de Google Maps
+     * Decodifica una cadena polyline de Google Maps/OSRM
+     * 
      * @param encoded Cadena polyline codificada
      * @return Lista de RoutePoints
      */
@@ -239,32 +241,33 @@ public class RouteSimulationService {
             int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
             lng += dlng;
 
-            // Polyline con precisión de 6 decimales (1E6) - estándar de Mapbox
-            RoutePoint p = new RoutePoint((double) lat / 1E6, (double) lng / 1E6);
+            // IMPORTANTE: OSRM usa precisión 5 (1E5), no 6 (1E6)
+            // Precisión 5 = estándar de Google Maps y OSRM (5 dígitos decimales)
+            RoutePoint p = new RoutePoint((double) lat / 1E5, (double) lng / 1E5);
             poly.add(p);
         }
 
         return poly;
     }
-    
+
     /**
      * Parsea la geometría de la ruta (ahora acepta polyline codificado)
      */
     private boolean parseRouteGeometry(String routeGeometry) {
         try {
             routePoints.clear();
-            
+
             // Intentar decodificar como polyline primero (formato esperado del backend)
             try {
                 routePoints = decodePolyline(routeGeometry);
                 return routePoints.size() > 0;
             } catch (Exception e) {
             }
-            
+
             // Si falla, intentar parsear como GeoJSON (legacy)
             JSONObject geoJson = new JSONObject(routeGeometry);
             String type = geoJson.getString("type");
-            
+
             if ("LineString".equals(type)) {
                 JSONArray coordinates = geoJson.getJSONArray("coordinates");
                 for (int i = 0; i < coordinates.length(); i++) {
@@ -276,14 +279,14 @@ public class RouteSimulationService {
             } else {
                 return false;
             }
-            
+
             return routePoints.size() > 0;
-            
+
         } catch (Exception e) {
             return false;
         }
     }
-    
+
     /**
      * Simula el siguiente punto de la ruta
      */
@@ -296,18 +299,18 @@ public class RouteSimulationService {
             isSimulating = false;
             return;
         }
-        
+
         RoutePoint point = routePoints.get(currentPointIndex);
-        
+
         // Enviar ubicación a través de SignalR
         sendLocationUpdate(point.latitude, point.longitude);
-        
+
         currentPointIndex++;
-        
+
         // Programar el siguiente punto
         simulationHandler.postDelayed(this::simulateNextPoint, SIMULATION_INTERVAL);
     }
-    
+
     /**
      * Envía la ubicación actual al servidor a través de SignalR
      */
@@ -315,19 +318,19 @@ public class RouteSimulationService {
         if (hubConnection == null || hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
             return;
         }
-        
+
         new Thread(() -> {
             try {
                 String status = "in_progress";
-                
+
                 // Enviar ubicación al hub - este método existe en BusHub.cs
                 hubConnection.send("UpdateBusLocation", currentBusId, latitude, longitude, status);
-                
+
             } catch (Exception e) {
             }
         }).start();
     }
-    
+
     /**
      * Detiene la simulación
      */
@@ -335,7 +338,7 @@ public class RouteSimulationService {
         isSimulating = false;
         currentPointIndex = 0;
         simulationHandler.removeCallbacksAndMessages(null);
-        
+
         // Desconectar SignalR
         if (hubConnection != null && hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
             new Thread(() -> {
@@ -346,28 +349,28 @@ public class RouteSimulationService {
             }).start();
         }
     }
-    
+
     /**
      * Verifica si la simulación está activa
      */
     public boolean isSimulating() {
         return isSimulating;
     }
-    
+
     /**
      * Obtiene el índice del punto actual
      */
     public int getCurrentPointIndex() {
         return currentPointIndex;
     }
-    
+
     /**
      * Obtiene el total de puntos de la ruta
      */
     public int getTotalPoints() {
         return routePoints.size();
     }
-    
+
     /**
      * Obtiene la posición actual del bus
      */
@@ -377,7 +380,7 @@ public class RouteSimulationService {
         }
         return routePoints.get(currentPointIndex);
     }
-    
+
     /**
      * Obtiene el punto en un índice específico
      */
@@ -387,14 +390,14 @@ public class RouteSimulationService {
         }
         return null;
     }
-    
+
     /**
      * Clase interna RoutePoint - accesible desde otras clases
      */
     public static class RoutePoint {
         public double latitude;
         public double longitude;
-        
+
         public RoutePoint(double latitude, double longitude) {
             this.latitude = latitude;
             this.longitude = longitude;

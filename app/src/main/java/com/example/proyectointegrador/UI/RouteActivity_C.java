@@ -40,13 +40,13 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
     private String currentTripId;
     private String assignedBusId;
     private String assignedRouteId;
-    
+
     // Para la animación del bus
     private Point currentBusPosition;
     private Handler animationHandler;
     private java.util.List<Point> routePoints;
     private int currentPointIndex = 0;
-    
+
     // SignalR para recibir actualizaciones de ubicación en tiempo real
     private HubConnection hubConnection;
 
@@ -59,11 +59,11 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
 
         SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
         driverEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "");
-        
+
         // Obtener instancia del servicio de simulación (Singleton)
         String baseUrl = ApiConfig.getApiUrl(this, "");
         simulationService = RouteSimulationService.getInstance(this, baseUrl);
-        
+
         // Inicializar handler para animación
         animationHandler = new Handler(Looper.getMainLooper());
         routePoints = new java.util.ArrayList<>();
@@ -80,9 +80,10 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
             }
         });
     }
-    
+
     /**
-     * Inicializa la conexión SignalR para recibir actualizaciones de ubicación en tiempo real
+     * Inicializa la conexión SignalR para recibir actualizaciones de ubicación en
+     * tiempo real
      */
     private void initializeSignalR() {
         new Thread(() -> {
@@ -92,52 +93,49 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
                     cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
                 }
                 String hubUrl = cleanBaseUrl + "/bushub";
-                
-                android.util.Log.d("RouteActivity_C", "🔌 Conectando a SignalR: " + hubUrl);
-                
+
+
                 hubConnection = HubConnectionBuilder.create(hubUrl)
                         .build();
-                
+
                 // Suscribirse al evento ReceiveBusLocation
                 hubConnection.on("ReceiveBusLocation", (busId, latitude, longitude, status) -> {
                     // Solo actualizar si es el bus del viaje actual
                     if (busId.equals(assignedBusId)) {
-                        android.util.Log.d("RouteActivity_C", "📍 Ubicación recibida: Lat=" + latitude + ", Lng=" + longitude);
                         runOnUiThread(() -> {
                             updateBusPosition(latitude, longitude);
                         });
                     }
                 }, String.class, Double.class, Double.class, String.class);
-                
+
                 // Ya no necesitamos listener de TripEnded aquí
-                
+
                 // Conectar
                 hubConnection.start().blockingAwait();
-                android.util.Log.d("RouteActivity_C", "✅ SignalR conectado exitosamente");
-                
+
             } catch (Exception e) {
-                android.util.Log.e("RouteActivity_C", "❌ Error conectando SignalR: " + e.getMessage());
                 e.printStackTrace();
             }
         }).start();
     }
-    
+
     /**
      * Actualiza la posición del bus en el mapa
      */
     private void updateBusPosition(double latitude, double longitude) {
-        if (mapView == null) return;
-        
+        if (mapView == null)
+            return;
+
         Point newPosition = Point.fromLngLat(longitude, latitude);
         currentBusPosition = newPosition;
-        
+
         mapView.getMapboxMap().getStyle(style -> {
             try {
                 // Actualizar posición del marcador del bus
                 if (style.styleSourceExists("bus-source")) {
                     String featureCollection = Feature.fromGeometry(newPosition).toJson();
                     style.setStyleSourceProperty("bus-source", "data", Value.valueOf(featureCollection));
-                    
+
                     // Mover la cámara suavemente para seguir al bus
                     CameraAnimationsUtils.flyTo(
                             mapView.getMapboxMap(),
@@ -147,11 +145,9 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
                                     .build(),
                             new MapAnimationOptions.Builder()
                                     .duration(2000) // Animación suave de 2 segundos
-                                    .build()
-                    );
+                                    .build());
                 }
             } catch (Exception e) {
-                android.util.Log.e("RouteActivity_C", "Error actualizando posición del bus: " + e.getMessage());
             }
         });
     }
@@ -181,7 +177,8 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
                     String line;
-                    while ((line = reader.readLine()) != null) response.append(line);
+                    while ((line = reader.readLine()) != null)
+                        response.append(line);
                     reader.close();
 
                     String jsonStr = response.toString();
@@ -189,9 +186,8 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
 
                     JSONObject json = new JSONObject(jsonStr);
                     String routeGeometry = json.optString("routeGeometry", json.optString("RouteGeometry"));
-                    
-                    android.util.Log.d("RouteActivity_C", "📝 RouteGeometry recibido: " + routeGeometry);
-                    
+
+
                     // Extraer datos del viaje (el backend devuelve con primera letra mayúscula)
                     currentTripId = json.optString("tripId", json.optString("TripId"));
                     assignedBusId = json.optString("busId", json.optString("BusId"));
@@ -199,15 +195,12 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
 
                     // !!! VALIDACIÓN CLAVE
                     if (routeGeometry == null || routeGeometry.isEmpty()) {
-                        android.util.Log.e("RouteActivity_C", "❌ RouteGeometry vacío o null");
                     } else {
-                        android.util.Log.d("RouteActivity_C", "✅ RouteGeometry válido, length: " + routeGeometry.length());
                     }
 
                     double startLat = json.optDouble("startLat", 0.0);
                     double startLng = json.optDouble("startLng", 0.0);
-                    
-                    android.util.Log.d("RouteActivity_C", "📍 Coordenadas inicio: Lat=" + startLat + ", Lng=" + startLng);
+
 
                     // Si las coordenadas vienen en 0, forzamos Santa Cruz para no ver el océano
                     if (startLat == 0.0 && startLng == 0.0) {
@@ -221,9 +214,10 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
 
                     runOnUiThread(() -> {
                         dibujarRuta(finalRouteGeometry, finalLat, finalLng);
-                        
+
                         // NO iniciar simulación automáticamente desde RouteActivity
-                        // La simulación solo se inicia desde MainActivity cuando se presiona "INICIAR VIAJE"
+                        // La simulación solo se inicia desde MainActivity cuando se presiona "INICIAR
+                        // VIAJE"
                         if (simulationService != null && simulationService.isSimulating()) {
                             Toast.makeText(this, "Ruta cargada - Simulación en curso", Toast.LENGTH_SHORT).show();
                         } else {
@@ -231,7 +225,9 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
                         }
                     });
                 } else {
-                    runOnUiThread(() -> Toast.makeText(this, "No hay viaje activo (Code " + responseCode + ")", Toast.LENGTH_LONG).show());
+                    runOnUiThread(() -> Toast
+                            .makeText(this, "No hay viaje activo", Toast.LENGTH_LONG)
+                            .show());
                 }
 
             } catch (Exception e) {
@@ -250,7 +246,8 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
             BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder response = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) response.append(line);
+            while ((line = reader.readLine()) != null)
+                response.append(line);
             JSONObject json = new JSONObject(response.toString());
             return json.has("id") ? json.getString("id") : json.getString("Id");
         }
@@ -258,102 +255,99 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
     }
 
     private void dibujarRuta(String geometry, double lat, double lng) {
-        if (mapView == null) return;
+        if (mapView == null)
+            return;
 
-        android.util.Log.d("RouteActivity_C", "🗺️ dibujarRuta() - Geometry: " + geometry);
-        android.util.Log.d("RouteActivity_C", "🗺️ dibujarRuta() - Inicio: Lat=" + lat + ", Lng=" + lng);
 
         mapView.getMapboxMap().getStyle(style -> {
             try {
-                // Decodificar el polyline para obtener todos los puntos de la ruta
-                LineString lineString = LineString.fromPolyline(geometry, 6);
+                // IMPORTANTE: OSRM devuelve polylines con precisión 5 (no 6)
+                // Precisión 5 = estándar de Google/OSRM (5 dígitos decimales)
+                // Precisión 6 = usado por algunos servicios (6 dígitos decimales)
+                LineString lineString = LineString.fromPolyline(geometry, 5);
                 routePoints = lineString.coordinates();
-                
-                android.util.Log.d("RouteActivity_C", "✅ Polyline decodificado: " + routePoints.size() + " puntos");
+
                 if (routePoints.size() > 0) {
-                    android.util.Log.d("RouteActivity_C", "📍 Primer punto: " + routePoints.get(0).toString());
-                    android.util.Log.d("RouteActivity_C", "📍 Último punto: " + routePoints.get(routePoints.size()-1).toString());
                 }
-                
+
                 // PRIMERO: Dibujar la línea azul de la ruta completa
                 String routeSourceId = "route-source";
                 String routeLayerId = "route-layer";
-                
+
                 // Limpiar si existe
                 if (style.styleSourceExists(routeSourceId)) {
                     style.removeStyleLayer(routeLayerId);
                     style.removeStyleSource(routeSourceId);
                 }
-                
+
                 // Crear fuente para la línea de la ruta
-                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource routeSource =
-                        new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(routeSourceId)
-                                .geometry(lineString)
-                                .build();
-                
+                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource routeSource = new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(
+                        routeSourceId)
+                        .geometry(lineString)
+                        .build();
+
                 routeSource.bindTo(style);
-                
+
                 // Capa de línea para la ruta (azul)
-                com.mapbox.maps.extension.style.layers.generated.LineLayer routeLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.LineLayer(routeLayerId, routeSourceId)
-                                .lineColor("#0080FF")  // Azul
-                                .lineWidth(5.0);
-                
+                com.mapbox.maps.extension.style.layers.generated.LineLayer routeLayer = new com.mapbox.maps.extension.style.layers.generated.LineLayer(
+                        routeLayerId, routeSourceId)
+                        .lineColor("#0080FF") // Azul
+                        .lineWidth(5.0);
+
                 routeLayer.bindTo(style);
-                
-                
+
                 // Crear marcador de inicio (azul) usando drawable
                 String startSourceId = "start-source";
                 String startLayerId = "start-layer";
-                
+
                 if (style.styleSourceExists(startSourceId)) {
                     style.removeStyleLayer(startLayerId);
                     style.removeStyleSource(startSourceId);
                 }
-                
+
                 Point startPoint = routePoints.get(0);
-                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource startSource =
-                        new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(startSourceId)
-                                .feature(Feature.fromGeometry(startPoint))
-                                .build();
+                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource startSource = new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(
+                        startSourceId)
+                        .feature(Feature.fromGeometry(startPoint))
+                        .build();
                 startSource.bindTo(style);
-                
+
                 // Cargar el icono de ubicación azul
                 style.addImage("start-marker-icon", getBitmapFromVectorDrawable(R.drawable.ic_location_blue));
-                
-                com.mapbox.maps.extension.style.layers.generated.SymbolLayer startLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.SymbolLayer(startLayerId, startSourceId)
-                                .iconImage("start-marker-icon")
-                                .iconSize(1.5)
-                                .iconAnchor(IconAnchor.BOTTOM);
+
+                com.mapbox.maps.extension.style.layers.generated.SymbolLayer startLayer = new com.mapbox.maps.extension.style.layers.generated.SymbolLayer(
+                        startLayerId, startSourceId)
+                        .iconImage("start-marker-icon")
+                        .iconSize(1.5)
+                        .iconAnchor(IconAnchor.BOTTOM);
                 startLayer.bindTo(style);
-                
+
                 // Crear marcador de fin (rojo) usando drawable
                 String endSourceId = "end-source";
                 String endLayerId = "end-layer";
-                
+
                 if (style.styleSourceExists(endSourceId)) {
                     style.removeStyleLayer(endLayerId);
                     style.removeStyleSource(endSourceId);
                 }
-                
+
                 Point endPoint = routePoints.get(routePoints.size() - 1);
-                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource endSource =
-                        new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(endSourceId)
-                                .feature(Feature.fromGeometry(endPoint))
-                                .build();
+                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource endSource = new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(
+                        endSourceId)
+                        .feature(Feature.fromGeometry(endPoint))
+                        .build();
                 endSource.bindTo(style);
-                
+
                 // Cargar el icono de ubicación rojo
                 style.addImage("end-marker-icon", getBitmapFromVectorDrawable(R.drawable.ic_location_red));
-                
-                com.mapbox.maps.extension.style.layers.generated.SymbolLayer endLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.SymbolLayer(endLayerId, endSourceId)
-                                .iconImage("end-marker-icon")
-                                .iconSize(1.5)
-                                .iconAnchor(IconAnchor.BOTTOM);
+
+                com.mapbox.maps.extension.style.layers.generated.SymbolLayer endLayer = new com.mapbox.maps.extension.style.layers.generated.SymbolLayer(
+                        endLayerId, endSourceId)
+                        .iconImage("end-marker-icon")
+                        .iconSize(1.5)
+                        .iconAnchor(IconAnchor.BOTTOM);
                 endLayer.bindTo(style);
-                
+
                 // SEGUNDO: Preparar el marcador del bus con diseño mejorado
                 String busSourceId = "bus-source";
 
@@ -371,40 +365,40 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
                 currentPointIndex = 0;
 
                 // Crear fuente para el marcador del bus
-                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource busSource =
-                        new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(busSourceId)
-                                .feature(Feature.fromGeometry(currentBusPosition))
-                                .build();
+                com.mapbox.maps.extension.style.sources.generated.GeoJsonSource busSource = new com.mapbox.maps.extension.style.sources.generated.GeoJsonSource.Builder(
+                        busSourceId)
+                        .feature(Feature.fromGeometry(currentBusPosition))
+                        .build();
 
                 busSource.bindTo(style);
 
                 // Círculo exterior del bus (sombra)
-                com.mapbox.maps.extension.style.layers.generated.CircleLayer busShadowLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.CircleLayer("bus-shadow-layer", busSourceId)
-                                .circleRadius(18.0)
-                                .circleColor(Color.parseColor("#40000000")) // Sombra
-                                .circleOpacity(0.3);
+                com.mapbox.maps.extension.style.layers.generated.CircleLayer busShadowLayer = new com.mapbox.maps.extension.style.layers.generated.CircleLayer(
+                        "bus-shadow-layer", busSourceId)
+                        .circleRadius(18.0)
+                        .circleColor(Color.parseColor("#40000000")) // Sombra
+                        .circleOpacity(0.3);
                 busShadowLayer.bindTo(style);
-                
+
                 // Círculo exterior del bus (gradiente)
-                com.mapbox.maps.extension.style.layers.generated.CircleLayer busOuterLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.CircleLayer("bus-outer-layer", busSourceId)
-                                .circleRadius(16.0)
-                                .circleColor(Color.parseColor("#8D0743")); // Color principal
+                com.mapbox.maps.extension.style.layers.generated.CircleLayer busOuterLayer = new com.mapbox.maps.extension.style.layers.generated.CircleLayer(
+                        "bus-outer-layer", busSourceId)
+                        .circleRadius(16.0)
+                        .circleColor(Color.parseColor("#8D0743")); // Color principal
                 busOuterLayer.bindTo(style);
-                
+
                 // Anillo blanco
-                com.mapbox.maps.extension.style.layers.generated.CircleLayer busRingLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.CircleLayer("bus-ring-layer", busSourceId)
-                                .circleRadius(13.0)
-                                .circleColor(Color.WHITE);
+                com.mapbox.maps.extension.style.layers.generated.CircleLayer busRingLayer = new com.mapbox.maps.extension.style.layers.generated.CircleLayer(
+                        "bus-ring-layer", busSourceId)
+                        .circleRadius(13.0)
+                        .circleColor(Color.WHITE);
                 busRingLayer.bindTo(style);
-                
+
                 // Círculo interior del bus
-                com.mapbox.maps.extension.style.layers.generated.CircleLayer busLayer =
-                        new com.mapbox.maps.extension.style.layers.generated.CircleLayer("bus-layer", busSourceId)
-                                .circleRadius(10.0)
-                                .circleColor(Color.parseColor("#B31D5A")); // Color vibrante
+                com.mapbox.maps.extension.style.layers.generated.CircleLayer busLayer = new com.mapbox.maps.extension.style.layers.generated.CircleLayer(
+                        "bus-layer", busSourceId)
+                        .circleRadius(10.0)
+                        .circleColor(Color.parseColor("#B31D5A")); // Color vibrante
                 busLayer.bindTo(style);
 
                 // Centrar cámara en la posición inicial
@@ -412,18 +406,17 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
                         new CameraOptions.Builder()
                                 .center(currentBusPosition)
                                 .zoom(15.0) // Zoom más cercano para seguir al bus
-                                .build()
-                );
+                                .build());
 
-                // Ya no necesitamos animación manual, SignalR se encargará de actualizar la posición
-                android.util.Log.d("RouteActivity_C", "✅ Mapa configurado, esperando actualizaciones de SignalR");
-                
+                // Ya no necesitamos animación manual, SignalR se encargará de actualizar la
+                // posición
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
     }
-    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -431,33 +424,30 @@ public class RouteActivity_C extends BaseNavigationActivity_C {
         if (animationHandler != null) {
             animationHandler.removeCallbacksAndMessages(null);
         }
-        
+
         // Desconectar SignalR
         if (hubConnection != null && hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
             new Thread(() -> {
                 try {
                     hubConnection.stop().blockingAwait();
-                    android.util.Log.d("RouteActivity_C", "🔌 SignalR desconectado");
                 } catch (Exception e) {
-                    android.util.Log.e("RouteActivity_C", "Error desconectando SignalR: " + e.getMessage());
                 }
             }).start();
         }
-        
+
         // La simulación continúa en el servicio Singleton
     }
-    
+
     private android.graphics.Bitmap getBitmapFromVectorDrawable(int drawableId) {
         android.graphics.drawable.Drawable drawable = androidx.core.content.ContextCompat.getDrawable(this, drawableId);
         if (drawable instanceof android.graphics.drawable.BitmapDrawable) {
             return ((android.graphics.drawable.BitmapDrawable) drawable).getBitmap();
         }
-        
+
         android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
-            drawable.getIntrinsicWidth(),
-            drawable.getIntrinsicHeight(),
-            android.graphics.Bitmap.Config.ARGB_8888
-        );
+                drawable.getIntrinsicWidth(),
+                drawable.getIntrinsicHeight(),
+                android.graphics.Bitmap.Config.ARGB_8888);
         android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.draw(canvas);

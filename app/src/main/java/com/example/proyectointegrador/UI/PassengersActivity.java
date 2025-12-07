@@ -47,8 +47,8 @@ public class PassengersActivity extends BaseNavigationActivity_C {
         listaPasajeros = new ArrayList<>();
         adapter = new PassengerAdapter(listaPasajeros, this::onScanQRClicked);
         recyclerViewPasajeros.setAdapter(adapter);
-
-        cargarPasajeros();
+        
+        // NO llamar cargarPasajeros() aquí - onResume() lo hará automáticamente
     }
 
     @Override
@@ -106,10 +106,12 @@ public class PassengersActivity extends BaseNavigationActivity_C {
 
 
     private void cargarPasajeros() {
+        
         new Thread(() -> {
             try {
                 SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
                 String email = prefs.getString("LOGGED_IN_USER_EMAIL", "");
+                
                 
                 if (email.isEmpty()) {
                     runOnUiThread(() -> {
@@ -149,12 +151,14 @@ public class PassengersActivity extends BaseNavigationActivity_C {
                 JSONArray tripsArray = new JSONArray(responseTrips.toString());
                 String currentTripId = null;
 
+
                 // Buscar viaje scheduled o active del chofer
                 for (int i = 0; i < tripsArray.length(); i++) {
                     JSONObject tripJson = tripsArray.getJSONObject(i);
                     String tripDriverId = tripJson.has("DriverId") ? tripJson.getString("DriverId") : tripJson.getString("driverId");
                     String tripStatus = tripJson.has("Status") ? tripJson.getString("Status") : tripJson.getString("status");
                     String tripId = tripJson.has("Id") ? tripJson.getString("Id") : tripJson.getString("id");
+                    
                     
                     // Buscar viajes scheduled o active (donde se pueden escanear tickets)
                     if (tripDriverId.equals(driverId) && 
@@ -165,12 +169,16 @@ public class PassengersActivity extends BaseNavigationActivity_C {
                 }
 
                 if (currentTripId != null) {
+                    
                     // Obtener pasajeros validados del viaje usando PassengerInTrip
-                    URL urlPassengers = new URL(ApiConfig.getApiUrl(PassengersActivity.this, "/passengerintrip/" + currentTripId));
+                    String passengersUrl = ApiConfig.getApiUrl(PassengersActivity.this, "/passengerintrip/" + currentTripId);
+                    
+                    URL urlPassengers = new URL(passengersUrl);
                     HttpURLConnection connPassengers = (HttpURLConnection) urlPassengers.openConnection();
                     connPassengers.setRequestMethod("GET");
 
                     int responseCode = connPassengers.getResponseCode();
+                    
                     if (responseCode == 200) {
                         BufferedReader readerPassengers = new BufferedReader(new InputStreamReader(connPassengers.getInputStream()));
                         StringBuilder responsePassengers = new StringBuilder();
@@ -180,6 +188,7 @@ public class PassengersActivity extends BaseNavigationActivity_C {
                         }
                         readerPassengers.close();
 
+                        
                         JSONArray passengersArray = new JSONArray(responsePassengers.toString());
                         
                         if (passengersArray.length() == 0) {
@@ -197,13 +206,12 @@ public class PassengersActivity extends BaseNavigationActivity_C {
                         for (int j = 0; j < passengersArray.length(); j++) {
                             try {
                                 JSONObject passengerJson = passengersArray.getJSONObject(j);
+                                
                                 String studentId = passengerJson.has("StudentId") ? passengerJson.getString("StudentId") : passengerJson.getString("studentId");
                                 
-                                android.util.Log.d("PassengersActivity", "Cargando estudiante con ID: " + studentId);
                                 
                                 // Verificar si studentId es un email (no debería serlo)
                                 if (studentId.contains("@")) {
-                                    android.util.Log.e("PassengersActivity", "ERROR: StudentId es un email en lugar de un ID: " + studentId);
                                     // Intentar buscar por email como fallback
                                     URL urlStudent = new URL(ApiConfig.getApiUrl(PassengersActivity.this, "/student/email/" + studentId));
                                     HttpURLConnection connStudent = (HttpURLConnection) urlStudent.openConnection();
@@ -248,12 +256,14 @@ public class PassengersActivity extends BaseNavigationActivity_C {
                                     listaPasajeros.add(passenger);
                                 }
                             } catch (Exception ex) {
-                                android.util.Log.e("PassengersActivity", "Error cargando pasajero " + j + ": " + ex.getMessage());
                                 ex.printStackTrace();
                                 // Continuar con el siguiente pasajero
                             }
                         }
 
+                        for (int k = 0; k < listaPasajeros.size(); k++) {
+                        }
+                        
                         runOnUiThread(() -> {
                             adapter.notifyDataSetChanged();
                             findViewById(R.id.emptyState).setVisibility(android.view.View.GONE);
