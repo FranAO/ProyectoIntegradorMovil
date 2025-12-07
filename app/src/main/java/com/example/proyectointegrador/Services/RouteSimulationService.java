@@ -145,6 +145,9 @@ public class RouteSimulationService {
         simulationStartedByDriver = true;
         currentPointIndex = 0;
 
+        android.util.Log.d(TAG, "🚀 Iniciando simulación de ruta con " + routePoints.size() + " puntos");
+        android.util.Log.d(TAG, "📍 TripId: " + currentTripId + ", BusId: " + currentBusId);
+
         // Notificar que el viaje ha iniciado via SignalR
         notifyTripStarted();
 
@@ -156,14 +159,18 @@ public class RouteSimulationService {
      */
     private void notifyTripStarted() {
         if (hubConnection == null || hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
+            android.util.Log.w(TAG, "⚠️ No se pudo notificar inicio: SignalR no conectado");
             return;
         }
 
         new Thread(() -> {
             try {
+                android.util.Log.d(TAG, "📢 Notificando inicio de viaje via SignalR");
                 // Enviar notificación de inicio de viaje
                 hubConnection.send("NotifyTripStarted", currentTripId, currentBusId, currentRouteId);
+                android.util.Log.d(TAG, "✅ Inicio de viaje notificado correctamente");
             } catch (Exception e) {
+                android.util.Log.e(TAG, "❌ Error notificando inicio de viaje: " + e.getMessage());
             }
         }).start();
     }
@@ -172,18 +179,24 @@ public class RouteSimulationService {
      * Notifica via SignalR que el viaje ha finalizado
      */
     private void notifyTripEnded() {
+        android.util.Log.d(TAG, "🏁 Intentando notificar fin de viaje - TripId: " + currentTripId);
+
         if (hubConnection == null || hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
+            android.util.Log.w(TAG, "⚠️ No se pudo notificar fin: SignalR no conectado");
             return;
         }
 
         new Thread(() -> {
             try {
+                android.util.Log.d(TAG, "📢 Notificando fin de viaje via SignalR");
                 // Enviar notificación de fin de viaje
                 hubConnection.send("NotifyTripEnded", currentTripId);
+                android.util.Log.d(TAG, "✅ Fin de viaje notificado correctamente");
 
                 // Actualizar el estado del viaje en el servidor
                 updateTripStatus();
             } catch (Exception e) {
+                android.util.Log.e(TAG, "❌ Error notificando fin de viaje: " + e.getMessage());
             }
         }).start();
     }
@@ -195,6 +208,8 @@ public class RouteSimulationService {
         new Thread(() -> {
             try {
                 String urlStr = baseUrl + "trip/" + currentTripId + "/complete";
+                android.util.Log.d(TAG, "📡 Actualizando estado del viaje: " + urlStr);
+
                 URL url = new URL(urlStr);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("PUT");
@@ -202,10 +217,13 @@ public class RouteSimulationService {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200 || responseCode == 204) {
+                    android.util.Log.d(TAG, "✅ Estado del viaje actualizado a 'completed'");
                 } else {
+                    android.util.Log.w(TAG, "⚠️ Error actualizando viaje. Código: " + responseCode);
                 }
                 conn.disconnect();
             } catch (Exception e) {
+                android.util.Log.e(TAG, "❌ Error al actualizar estado del viaje: " + e.getMessage());
             }
         }).start();
     }
@@ -291,16 +309,24 @@ public class RouteSimulationService {
      * Simula el siguiente punto de la ruta
      */
     private void simulateNextPoint() {
-        if (!isSimulating || currentPointIndex >= routePoints.size()) {
-            // Fin de la simulación
-            if (currentPointIndex >= routePoints.size()) {
-                notifyTripEnded();
-            }
+        // Verificar si hemos llegado al final de la ruta
+        if (currentPointIndex >= routePoints.size()) {
+            android.util.Log.d(TAG,
+                    "🏁 FIN DE RUTA ALCANZADO - Punto " + currentPointIndex + " de " + routePoints.size());
             isSimulating = false;
+            notifyTripEnded();
+            return;
+        }
+
+        if (!isSimulating) {
+            android.util.Log.d(TAG, "⏸️ Simulación detenida");
             return;
         }
 
         RoutePoint point = routePoints.get(currentPointIndex);
+
+        android.util.Log.d(TAG, String.format("📍 Punto %d/%d - Lat: %.6f, Lng: %.6f",
+                currentPointIndex + 1, routePoints.size(), point.latitude, point.longitude));
 
         // Enviar ubicación a través de SignalR
         sendLocationUpdate(point.latitude, point.longitude);
@@ -316,6 +342,7 @@ public class RouteSimulationService {
      */
     private void sendLocationUpdate(double latitude, double longitude) {
         if (hubConnection == null || hubConnection.getConnectionState() != HubConnectionState.CONNECTED) {
+            android.util.Log.w(TAG, "⚠️ No se pudo enviar ubicación: SignalR no conectado");
             return;
         }
 
@@ -325,8 +352,10 @@ public class RouteSimulationService {
 
                 // Enviar ubicación al hub - este método existe en BusHub.cs
                 hubConnection.send("UpdateBusLocation", currentBusId, latitude, longitude, status);
+                android.util.Log.d(TAG, "✅ Ubicación enviada via SignalR");
 
             } catch (Exception e) {
+                android.util.Log.e(TAG, "❌ Error enviando ubicación: " + e.getMessage());
             }
         }).start();
     }

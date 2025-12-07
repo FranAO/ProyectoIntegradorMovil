@@ -271,6 +271,9 @@ public class MainActivity_C extends BaseNavigationActivity_C {
                     int activateResponseCode = activateConn.getResponseCode();
 
                     if (activateResponseCode == 200 || activateResponseCode == 204) {
+                        // La simulación se maneja automáticamente en el backend
+                        // No iniciamos simulación local para evitar conflictos
+
                         runOnUiThread(() -> {
                             Toast.makeText(this, "¡Viaje Iniciado!", Toast.LENGTH_LONG).show();
                             startTripButton.setText("VIAJE EN CURSO");

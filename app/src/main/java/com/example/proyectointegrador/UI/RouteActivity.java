@@ -236,12 +236,72 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
 
     private void dibujarRutaEnMapa(String polylineString) {
         try {
+            android.util.Log.d("RouteActivity", "🗺️ Iniciando dibujo de ruta...");
+            android.util.Log.d("RouteActivity",
+                    "📦 RouteGeometry recibido: " + (polylineString != null
+                            ? polylineString.substring(0, Math.min(100, polylineString.length()))
+                            : "null"));
+            android.util.Log.d("RouteActivity",
+                    "📏 Longitud: " + (polylineString != null ? polylineString.length() : 0));
 
-            // Decodificar el polyline
-            List<Point> points = decodePolyline(polylineString);
+            if (polylineString == null || polylineString.trim().isEmpty()) {
+                android.util.Log.e("RouteActivity", "❌ RouteGeometry está vacío o null");
+                runOnUiThread(
+                        () -> Toast.makeText(this, "No hay geometría de ruta disponible", Toast.LENGTH_SHORT).show());
+                mostrarMapaDefault();
+                return;
+            }
+
+            List<Point> points = new ArrayList<>();
+
+            // Verificar si es un JSON (fallback de línea recta) o un polyline encoded
+            if (polylineString.trim().startsWith("{")) {
+                android.util.Log.d("RouteActivity", "📐 Detectado formato GeoJSON");
+                try {
+                    JSONObject geoJson = new JSONObject(polylineString);
+                    org.json.JSONArray coordinates = geoJson.getJSONArray("coordinates");
+
+                    for (int i = 0; i < coordinates.length(); i++) {
+                        org.json.JSONArray coord = coordinates.getJSONArray(i);
+                        double lng = coord.getDouble(0);
+                        double lat = coord.getDouble(1);
+                        points.add(Point.fromLngLat(lng, lat));
+                        android.util.Log.d("RouteActivity", String.format("   📍 Punto %d: [%.6f, %.6f]", i, lng, lat));
+                    }
+                    android.util.Log.d("RouteActivity", "✅ GeoJSON parseado: " + points.size() + " puntos");
+                } catch (Exception e) {
+                    android.util.Log.e("RouteActivity", "❌ Error parseando GeoJSON: " + e.getMessage());
+                    e.printStackTrace();
+                    runOnUiThread(() -> Toast
+                            .makeText(this, "Error parseando formato de ruta (GeoJSON)", Toast.LENGTH_SHORT).show());
+                    mostrarMapaDefault();
+                    return;
+                }
+            } else {
+                android.util.Log.d("RouteActivity", "🔤 Detectado formato Polyline");
+                try {
+                    // Decodificar el polyline (formato OSRM)
+                    points = decodePolyline(polylineString);
+                    android.util.Log.d("RouteActivity", "✅ Polyline decodificado: " + points.size() + " puntos");
+                    if (points.size() > 0) {
+                        android.util.Log.d("RouteActivity", String.format("   📍 Primer punto: [%.6f, %.6f]",
+                                points.get(0).longitude(), points.get(0).latitude()));
+                        android.util.Log.d("RouteActivity", String.format("   📍 Último punto: [%.6f, %.6f]",
+                                points.get(points.size() - 1).longitude(), points.get(points.size() - 1).latitude()));
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("RouteActivity", "❌ Error decodificando polyline: " + e.getMessage());
+                    e.printStackTrace();
+                    runOnUiThread(() -> Toast.makeText(this, "Error decodificando ruta (Polyline)", Toast.LENGTH_SHORT)
+                            .show());
+                    mostrarMapaDefault();
+                    return;
+                }
+            }
 
             if (points.isEmpty()) {
-                Toast.makeText(this, "No hay puntos en la ruta", Toast.LENGTH_SHORT).show();
+                android.util.Log.e("RouteActivity", "❌ No hay puntos en la ruta después del parseo");
+                runOnUiThread(() -> Toast.makeText(this, "No hay puntos en la ruta", Toast.LENGTH_SHORT).show());
                 mostrarMapaDefault();
                 return;
             }
@@ -249,13 +309,18 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
             // Guardar los puntos de la ruta para la animación
             routePoints.clear();
             routePoints.addAll(points);
+            android.util.Log.d("RouteActivity", "💾 Puntos guardados en routePoints: " + routePoints.size());
+
+            // Crear variable final para usar en lambdas
+            final List<Point> finalPoints = new ArrayList<>(points);
 
             MapboxMap mapboxMap = mapView.getMapboxMap();
             mapboxMap.loadStyleUri("mapbox://styles/mapbox/streets-v12", style -> {
 
                 try {
+                    android.util.Log.d("RouteActivity", "🎨 Estilo de mapa cargado, dibujando ruta...");
                     // Crear LineString con los puntos de la ruta
-                    LineString lineString = LineString.fromLngLats(points);
+                    LineString lineString = LineString.fromLngLats(finalPoints);
 
                     // Agregar source para la línea de la ruta
                     GeoJsonSource routeSource = new GeoJsonSource.Builder("route-source")
@@ -268,9 +333,10 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
                     lineLayer.lineColor("#0080FF");
                     lineLayer.lineWidth(5.0);
                     lineLayer.bindTo(style);
+                    android.util.Log.d("RouteActivity", "✅ Línea de ruta dibujada");
 
                     // Crear marcador de inicio (azul)
-                    Point startPoint = points.get(0);
+                    Point startPoint = finalPoints.get(0);
                     Feature startFeature = Feature.fromGeometry(startPoint);
 
                     GeoJsonSource startSource = new GeoJsonSource.Builder("start-source")
@@ -286,9 +352,10 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
                     startLayer.iconSize(1.5);
                     startLayer.iconAnchor(IconAnchor.BOTTOM);
                     startLayer.bindTo(style);
+                    android.util.Log.d("RouteActivity", "✅ Marcador de inicio agregado");
 
                     // Crear marcador de fin (rojo)
-                    Point endPoint = points.get(points.size() - 1);
+                    Point endPoint = finalPoints.get(finalPoints.size() - 1);
                     Feature endFeature = Feature.fromGeometry(endPoint);
 
                     GeoJsonSource endSource = new GeoJsonSource.Builder("end-source")
@@ -304,9 +371,10 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
                     endLayer.iconSize(1.5);
                     endLayer.iconAnchor(IconAnchor.BOTTOM);
                     endLayer.bindTo(style);
+                    android.util.Log.d("RouteActivity", "✅ Marcador de fin agregado");
 
                     // Crear el marcador del bus
-                    Point firstPoint = points.get(0);
+                    Point firstPoint = finalPoints.get(0);
                     Feature busFeature = Feature.fromGeometry(firstPoint);
 
                     GeoJsonSource busSource = new GeoJsonSource.Builder("bus-source")
@@ -339,6 +407,8 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
                     busLayer.circleColor(Color.parseColor("#B31D5A"));
                     busLayer.bindTo(style);
 
+                    android.util.Log.d("RouteActivity", "✅ Marcador del bus agregado");
+
                     // Centrar cámara
                     mapboxMap.setCamera(
                             new CameraOptions.Builder()
@@ -349,10 +419,13 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
                     // Posición inicial del bus
                     currentBusPosition = firstPoint;
 
+                    android.util.Log.d("RouteActivity", "🎉 Ruta dibujada exitosamente!");
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Ruta cargada correctamente", Toast.LENGTH_SHORT).show();
                     });
                 } catch (Exception e) {
+                    android.util.Log.e("RouteActivity", "❌ Error al dibujar componentes del mapa: " + e.getMessage());
+                    e.printStackTrace();
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Error al dibujar la línea de la ruta", Toast.LENGTH_SHORT).show();
                     });
@@ -361,7 +434,9 @@ public class RouteActivity extends AppCompatActivity implements SignalRService.S
 
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error al dibujar la ruta: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            android.util.Log.e("RouteActivity", "❌ Error general en dibujarRutaEnMapa: " + e.getMessage());
+            runOnUiThread(() -> Toast.makeText(this, "Error al dibujar la ruta: " + e.getMessage(), Toast.LENGTH_SHORT)
+                    .show());
             mostrarMapaDefault();
         }
     }

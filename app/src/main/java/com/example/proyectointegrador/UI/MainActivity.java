@@ -42,7 +42,7 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
     private String currentTicketId = null;
     private boolean tripStartedByDriver = false;
     private static final String CHANNEL_ID = "trip_notifications";
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,20 +54,20 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         cardHistory = findViewById(R.id.cardHistory);
         tvUserName = findViewById(R.id.tvUserName);
         btnVerViaje = findViewById(R.id.btnVerViaje);
-        
+
         SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
         String userEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "Usuario");
-        
+
         DBHelper dbHelper = new DBHelper(this);
         Student student = dbHelper.obtenerStudentPorEmail(userEmail);
-        
+
         if (student != null) {
             String firstName = student.getFirstName() != null ? student.getFirstName().trim() : "";
             String lastName = student.getLastName() != null ? student.getLastName().trim() : "";
-            
+
             String fullName = firstName + " " + lastName;
             fullName = fullName.trim();
-            
+
             if (fullName.isEmpty()) {
                 tvUserName.setText("Usuario");
             } else {
@@ -76,17 +76,17 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         } else {
             tvUserName.setText("Usuario");
         }
-        
+
         setupNavigation();
-        
+
         // Obtener studentId
         if (student != null) {
             studentId = student.getId();
         }
-        
+
         // Crear canal de notificaciones
         createNotificationChannel();
-        
+
         // Inicializar SignalR
         signalRService = new SignalRService(this, this);
         signalRService.connect();
@@ -94,54 +94,87 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         settingsButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, SettingsActivity.class));
         });
-        
+
         cardBuyTicket.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, PackagesActivity.class);
             startActivity(intent);
         });
-        
+
         cardHistory.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
             startActivity(intent);
         });
-        
-//        btnViewTicket.setOnClickListener(v -> {
-//            if (currentTicketId != null && !currentTicketId.isEmpty()) {
-//                Intent intent = new Intent(MainActivity.this, TicketDetailActivity.class);
-//                intent.putExtra("TICKET_ID", currentTicketId);
-//                startActivity(intent);
-//            } else {
-//                Toast.makeText(this, "No hay ticket disponible", Toast.LENGTH_SHORT).show();
-//            }
-//        });
-        
+
+        // btnViewTicket.setOnClickListener(v -> {
+        // if (currentTicketId != null && !currentTicketId.isEmpty()) {
+        // Intent intent = new Intent(MainActivity.this, TicketDetailActivity.class);
+        // intent.putExtra("TICKET_ID", currentTicketId);
+        // startActivity(intent);
+        // } else {
+        // Toast.makeText(this, "No hay ticket disponible", Toast.LENGTH_SHORT).show();
+        // }
+        // });
 
         btnVerViaje.setOnClickListener(v -> {
             // Re-obtener prefs para tener el valor más actualizado
             SharedPreferences currentPrefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
             String tripId = currentPrefs.getString("CURRENT_TRIP_ID", "");
-            
-            // LOGS DE DIAGNÓSTICO
-            
+
             if (!tripId.isEmpty()) {
-                Intent intent = new Intent(MainActivity.this, RouteActivity.class);
-                intent.putExtra("TRIP_ID", tripId);
-                intent.putExtra("TICKET_ID", currentTicketId);
-                startActivity(intent);
+                // Obtener información del trip para conseguir el driverId
+                new Thread(() -> {
+                    try {
+                        String url = ApiConfig.getApiUrl(MainActivity.this, "trip/" + tripId);
+                        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                        conn.setRequestMethod("GET");
+
+                        if (conn.getResponseCode() == 200) {
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                            StringBuilder response = new StringBuilder();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                response.append(line);
+                            }
+                            reader.close();
+
+                            JSONObject trip = new JSONObject(response.toString());
+                            String driverId = trip.has("driverId") ? trip.getString("driverId")
+                                    : trip.optString("DriverId", "");
+
+                            runOnUiThread(() -> {
+                                Intent intent = new Intent(MainActivity.this, RouteActivity.class);
+                                intent.putExtra("TRIP_ID", tripId);
+                                intent.putExtra("TICKET_ID", currentTicketId);
+                                intent.putExtra("DRIVER_ID", driverId); // Agregar driverId
+                                startActivity(intent);
+                            });
+                        } else {
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "Error al cargar información del viaje", Toast.LENGTH_SHORT)
+                                        .show();
+                            });
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }).start();
             } else {
                 Toast.makeText(this, "No hay viajes activos en este momento", Toast.LENGTH_SHORT).show();
             }
         });
-        
+
         // NO llamar verificarViajeActivo() aquí - onResume() lo hará automáticamente
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
         verificarViajeActivo();
     }
-    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -149,19 +182,19 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
             signalRService.disconnect();
         }
     }
-    
+
     @Override
     protected void onStart() {
         super.onStart();
         // SignalR se encarga de mantener la conexión activa
     }
-    
+
     @Override
     protected void onStop() {
         super.onStop();
         // SignalR maneja la desconexión automáticamente
     }
-    
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "Notificaciones de Viaje";
@@ -169,7 +202,7 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
             int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
-            
+
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
@@ -179,21 +212,20 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
         String userEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "");
         String currentTripIdBefore = prefs.getString("CURRENT_TRIP_ID", "");
-        
-        
+
         if (userEmail.isEmpty()) {
             return;
         }
-        
+
         new Thread(() -> {
             try {
                 String url = ApiConfig.getApiUrl(MainActivity.this, "/student/" + userEmail + "/active-trip");
-                
+
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setRequestMethod("GET");
-                
+
                 int responseCode = conn.getResponseCode();
-                
+
                 if (responseCode == 200) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
@@ -202,26 +234,24 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                         response.append(line);
                     }
                     reader.close();
-                    
-                    
+
                     JSONObject json = new JSONObject(response.toString());
                     boolean hasActiveTrip = json.getBoolean("hasActiveTrip");
-                    
-                    
+
                     if (hasActiveTrip) {
                         String tripId = json.getString("tripId");
-                        
+
                         // Guardar para usar en botón
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putString("CURRENT_TRIP_ID", tripId);
                         editor.apply();
-                        
+
                     } else {
                         // Limpiar si no hay viaje activo
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.remove("CURRENT_TRIP_ID");
                         editor.apply();
-                        
+
                     }
                 } else {
                 }
@@ -258,19 +288,19 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
             runOnUiThread(() -> {
                 Toast.makeText(this, "Tu viaje ha finalizado", Toast.LENGTH_LONG).show();
                 showNotification("Viaje Finalizado", "Has llegado a tu destino");
-                
+
                 // Recargar el próximo viaje después de que termina uno
                 SharedPreferences prefs = getSharedPreferences("MiAppPrefs", MODE_PRIVATE);
                 String userEmail = prefs.getString("LOGGED_IN_USER_EMAIL", "");
-                //if (!userEmail.isEmpty()) {
-                  //  cargarProximoViaje(userEmail);
-                //}
-                
+                // if (!userEmail.isEmpty()) {
+                // cargarProximoViaje(userEmail);
+                // }
+
                 // Mostrar diálogo de calificación
                 if (currentDriverId != null && studentId != null) {
                     showRatingDialog();
                 }
-                
+
                 // Limpiar datos del viaje actual
                 currentTripId = null;
                 currentDriverId = null;
@@ -284,7 +314,7 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         // Este método es llamado cuando cualquier ticket es escaneado
         // La lógica específica se maneja en RouteActivity
     }
-    
+
     /**
      * Cancela tickets que no fueron usados (no escaneados) cuando termina el viaje
      */
@@ -296,23 +326,24 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                 URL url = new URL(urlStr);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
-                
+
                 if (conn.getResponseCode() == 200) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder response = new StringBuilder();
                     String line;
-                    while ((line = reader.readLine()) != null) response.append(line);
+                    while ((line = reader.readLine()) != null)
+                        response.append(line);
                     reader.close();
-                    
+
                     JSONArray tickets = new JSONArray(response.toString());
                     int canceledCount = 0;
-                    
+
                     for (int i = 0; i < tickets.length(); i++) {
                         JSONObject ticket = tickets.getJSONObject(i);
                         String ticketTripId = ticket.optString("TripId", "");
                         String ticketStatus = ticket.optString("Status", "");
                         String ticketId = ticket.optString("Id", ticket.optString("id", ""));
-                        
+
                         // Cancelar tickets confirmados pero no usados de este viaje
                         if (ticketTripId.equals(tripId) && ticketStatus.equalsIgnoreCase("confirmed")) {
                             if (cancelarTicket(ticketId)) {
@@ -320,20 +351,21 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                             }
                         }
                     }
-                    
+
                     final int finalCount = canceledCount;
                     if (finalCount > 0) {
                         runOnUiThread(() -> {
-                            Toast.makeText(this, finalCount + " ticket(s) no usado(s) cancelado(s)", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, finalCount + " ticket(s) no usado(s) cancelado(s)", Toast.LENGTH_SHORT)
+                                    .show();
                         });
                     }
                 }
-                
+
             } catch (Exception e) {
             }
         }).start();
     }
-    
+
     /**
      * Cancela un ticket específico
      */
@@ -344,26 +376,27 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("PUT");
             conn.setRequestProperty("Content-Type", "application/json");
-            
+
             int responseCode = conn.getResponseCode();
             conn.disconnect();
-            
+
             return (responseCode == 200 || responseCode == 204);
         } catch (Exception e) {
             return false;
         }
     }
-    
+
     private void showNotification(String title, String message) {
         // Verificar permiso para Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (checkSelfPermission(
+                    android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 // Si no hay permiso, solo mostrar Toast
                 Toast.makeText(this, title + ": " + message, Toast.LENGTH_LONG).show();
                 return;
             }
         }
-        
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(title)
@@ -374,23 +407,23 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify((int) System.currentTimeMillis(), builder.build());
     }
-    
-    private void showRatingDialog() {
-        RatingDialog dialog = new RatingDialog(this, currentTripId, currentDriverId, studentId, 
-            new RatingDialog.RatingListener() {
-                @Override
-                public void onRatingSubmitted(float rating, String comment) {
-                    enviarCalificacion(currentTripId, currentDriverId, studentId, rating, comment);
-                }
 
-                @Override
-                public void onRatingSkipped() {
-                    Toast.makeText(MainActivity.this, "Calificación omitida", Toast.LENGTH_SHORT).show();
-                }
-            });
+    private void showRatingDialog() {
+        RatingDialog dialog = new RatingDialog(this, currentTripId, currentDriverId, studentId,
+                new RatingDialog.RatingListener() {
+                    @Override
+                    public void onRatingSubmitted(float rating, String comment) {
+                        enviarCalificacion(currentTripId, currentDriverId, studentId, rating, comment);
+                    }
+
+                    @Override
+                    public void onRatingSkipped() {
+                        Toast.makeText(MainActivity.this, "Calificación omitida", Toast.LENGTH_SHORT).show();
+                    }
+                });
         dialog.show();
     }
-    
+
     private void enviarCalificacion(String tripId, String driverId, String studentId, float rating, String comment) {
         new Thread(() -> {
             try {
@@ -406,7 +439,8 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
                 ratingData.put("StudentId", studentId);
                 ratingData.put("Rating", rating);
                 ratingData.put("Comment", comment);
-                ratingData.put("CreatedAt", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date()));
+                ratingData.put("CreatedAt",
+                        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date()));
 
                 java.io.OutputStream os = conn.getOutputStream();
                 os.write(ratingData.toString().getBytes());
@@ -431,41 +465,41 @@ public class MainActivity extends BaseNavigationActivity implements SignalRServi
             }
         }).start();
     }
-    
+
     /**
      * Método para mostrar la notificación (via SignalR)
      */
     private void lanzarNotificacion(String titulo, String mensaje) {
         // Verificar permiso para Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (checkSelfPermission(
+                    android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 // Si no hay permiso, solo mostrar Toast
                 runOnUiThread(() -> Toast.makeText(this, titulo + ": " + mensaje, Toast.LENGTH_LONG).show());
                 return;
             }
         }
-        
+
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         String channelId = "canal_estado_viaje";
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                channelId, 
-                "Alertas de Viaje", 
-                NotificationManager.IMPORTANCE_HIGH
-            );
+                    channelId,
+                    "Alertas de Viaje",
+                    NotificationManager.IMPORTANCE_HIGH);
             manager.createNotificationChannel(channel);
         }
-        
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(titulo)
                 .setContentText(mensaje)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true);
-        
+
         manager.notify(1, builder.build());
-        
+
         // También mostrar Toast
         runOnUiThread(() -> Toast.makeText(this, titulo, Toast.LENGTH_LONG).show());
     }
